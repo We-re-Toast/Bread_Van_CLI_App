@@ -1,188 +1,167 @@
-![Tests](https://github.com/uwidcit/flaskmvc/actions/workflows/dev.yml/badge.svg)
+# 🍞 Bread Van App CLI
+This project provides a command-line interface (CLI) for managing and interacting with the Bread Van App.
+ It is built with Flask CLI and click, and supports multiple roles: Admin, Driver, and Resident.
 
-# Flask MVC Template
-A template for flask applications structured in the Model View Controller pattern [Demo](https://dcit-flaskmvc.herokuapp.com/). [Postman Collection](https://documenter.getpostman.com/view/583570/2s83zcTnEJ)
-
-
-# Dependencies
-* Python3/pip3
-* Packages listed in requirements.txt
-
-# Installing Dependencies
+## 🚀 Setup
+### Install dependencies:
 ```bash
 $ pip install -r requirements.txt
 ```
 
-# Configuration Management
-
-
-Configuration information such as the database url/port, credentials, API keys etc are to be supplied to the application. However, it is bad practice to stage production information in publicly visible repositories.
-Instead, all config is provided by a config file or via [environment variables](https://linuxize.com/post/how-to-set-and-list-environment-variables-in-linux/).
-
-## In Development
-
-When running the project in a development environment (such as gitpod) the app is configured via default_config.py file in the App folder. By default, the config for development uses a sqlite database.
-
-default_config.py
-```python
-SQLALCHEMY_DATABASE_URI = "sqlite:///temp-database.db"
-SECRET_KEY = "secret key"
-JWT_ACCESS_TOKEN_EXPIRES = 7
-ENV = "DEVELOPMENT"
-```
-
-These values would be imported and added to the app in load_config() function in config.py
-
-config.py
-```python
-# must be updated to inlude addtional secrets/ api keys & use a gitignored custom-config file instad
-def load_config():
-    config = {'ENV': os.environ.get('ENV', 'DEVELOPMENT')}
-    delta = 7
-    if config['ENV'] == "DEVELOPMENT":
-        from .default_config import JWT_ACCESS_TOKEN_EXPIRES, SQLALCHEMY_DATABASE_URI, SECRET_KEY
-        config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
-        config['SECRET_KEY'] = SECRET_KEY
-        delta = JWT_ACCESS_TOKEN_EXPIRES
-...
-```
-
-## In Production
-
-When deploying your application to production/staging you must pass
-in configuration information via environment tab of your render project's dashboard.
-
-![perms](./images/fig1.png)
-
-# Flask Commands
-
-wsgi.py is a utility script for performing various tasks related to the project. You can use it to import and test any code in the project. 
-You just need create a manager command function, for example:
-
-```python
-# inside wsgi.py
-
-user_cli = AppGroup('user', help='User object commands')
-
-@user_cli.cli.command("create-user")
-@click.argument("username")
-@click.argument("password")
-def create_user_command(username, password):
-    create_user(username, password)
-    print(f'{username} created!')
-
-app.cli.add_command(user_cli) # add the group to the cli
-
-```
-
-Then execute the command invoking with flask cli with command name and the relevant parameters
-
+### Initialize the database:
 ```bash
-$ flask user create bob bobpass
+flask init
 ```
+This creates and initializes all tables.
 
-
-# Running the Project
-
-_For development run the serve command (what you execute):_
+### Run any CLI command using:
 ```bash
-$ flask run
+flask <group> <command> [args...]
 ```
 
-_For production using gunicorn (what the production server executes):_
-```bash
-$ gunicorn wsgi:app
-```
 
-# Deploying
-You can deploy your version of this app to render by clicking on the "Deploy to Render" link above.
+👤 User Commands
+Group: flask user
+Login
 
-# Initializing the Database
-When connecting the project to a fresh empty database ensure the appropriate configuration is set then file then run the following command. This must also be executed once when running the app on heroku by opening the heroku console, executing bash and running the command in the dyno.
+ flask user login <username> <password>
 
-```bash
-$ flask init
-```
 
-# Database Migrations
-If changes to the models are made, the database must be'migrated' so that it can be synced with the new models.
-Then execute following commands using manage.py. More info [here](https://flask-migrate.readthedocs.io/en/latest/)
+Logout
 
-```bash
-$ flask db init
-$ flask db migrate
-$ flask db upgrade
-$ flask db --help
-```
+ flask user logout
 
-# Testing
 
-## Unit & Integration
-Unit and Integration tests are created in the App/test. You can then create commands to run them. Look at the unit test command in wsgi.py for example
+View Drives on a Street
 
-```python
-@test.command("user", help="Run User tests")
-@click.argument("type", default="all")
-def user_tests_command(type):
-    if type == "unit":
-        sys.exit(pytest.main(["-k", "UserUnitTests"]))
-    elif type == "int":
-        sys.exit(pytest.main(["-k", "UserIntegrationTests"]))
-    else:
-        sys.exit(pytest.main(["-k", "User"]))
-```
+ flask user view_street_drives
+ Prompts to select an area and street, then lists scheduled drives.
 
-You can then execute all user tests as follows
 
-```bash
-$ flask test user
-```
 
-You can also supply "unit" or "int" at the end of the comand to execute only unit or integration tests.
+🛠️ Admin Commands
+Group: flask admin
+Admins manage drivers, areas, and streets.
+List Users
 
-You can run all application tests with the following command
+ flask admin list [string|json]
 
-```bash
-$ pytest
-```
 
-## Test Coverage
+Create Driver
 
-You can generate a report on your test coverage via the following command
+ flask admin create_driver <username> <password>
 
-```bash
-$ coverage report
-```
 
-You can also generate a detailed html report in a directory named htmlcov with the following comand
+Delete Driver
 
-```bash
-$ coverage html
-```
+ flask admin delete_driver <driver_id>
 
-# Troubleshooting
 
-## Views 404ing
+Add Area
 
-If your newly created views are returning 404 ensure that they are added to the list in main.py.
+ flask admin add_area <name>
 
-```python
-from App.views import (
-    user_views,
-    index_views
-)
 
-# New views must be imported and added to this list
-views = [
-    user_views,
-    index_views
-]
-```
+Add Street
 
-## Cannot Update Workflow file
+ flask admin add_street <area_id> <name>
 
-If you are running into errors in gitpod when updateding your github actions file, ensure your [github permissions](https://gitpod.io/integrations) in gitpod has workflow enabled ![perms](./images/gitperms.png)
 
-## Database Issues
+Delete Area
 
+ flask admin delete_area <area_id>
+
+
+Delete Street
+
+ flask admin delete_street <street_id>
+
+
+View All Areas
+
+ flask admin view_all_areas
+
+
+View All Streets
+
+ flask admin view_all_streets
+
+
+
+🚐 Driver Commands
+Group: flask driver
+Drivers manage drives and stops.
+Schedule Drive
+
+ flask driver schedule_drive YYYY-MM-DD HH:MM
+ Prompts to select area & street.
+
+
+Cancel Drive
+
+ flask driver cancel_drive <drive_id>
+
+
+View My Drives
+
+ flask driver view_my_drives
+
+
+Start Drive
+
+ flask driver start_drive <drive_id>
+
+
+End Drive
+
+ flask driver end_drive
+
+
+View Requested Stops
+
+ flask driver view_requested_stops <drive_id>
+
+
+
+🏠 Resident Commands
+Group: flask resident
+Residents can create accounts, request stops, and view their inbox.
+Create Resident
+
+ flask resident create <username> <password>
+ Prompts for area, street, and house number.
+
+
+Request Stop
+
+ flask resident request_stop
+
+
+Cancel Stop
+
+ flask resident cancel_stop <drive_id>
+
+
+View Inbox
+
+ flask resident view_inbox
+
+
+View Driver Stats
+
+ flask resident view_driver_stats <driver_id>
+
+
+
+🔑 Role Requirements
+flask admin ... → must be logged in as Admin
+
+
+flask driver ... → must be logged in as Driver
+
+
+flask resident ... → must be logged in as Resident
+
+
+General user commands (login/logout/view_street_drives) are available to all.
 If you are adding models you may need to migrate the database with the commands given in the previous database migration section. Alternateively you can delete you database file.
