@@ -43,7 +43,7 @@ Prompts to select an area and street, then lists scheduled drives.
 Admins manage drivers, areas, and streets.
 ### List Users
 ```bash
-flask admin list [string|json]
+flask admin list
 ```
 
 ### Create Driver
