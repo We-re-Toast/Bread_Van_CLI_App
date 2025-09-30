@@ -20,148 +20,142 @@ flask <group> <command> [args...]
 ```
 
 
-👤 User Commands
-Group: flask user
-Login
-
+## 👤 User Commands | Group: flask user
+### Login
+```bash
  flask user login <username> <password>
+```
+
+### Logout
+```bash
+flask user logout
+```
+
+### View Drives on a Street
+```bash
+flask user view_street_drives
+```
+Prompts to select an area and street, then lists scheduled drives.
 
 
-Logout
 
- flask user logout
-
-
-View Drives on a Street
-
- flask user view_street_drives
- Prompts to select an area and street, then lists scheduled drives.
-
-
-
-🛠️ Admin Commands
-Group: flask admin
+## 🛠️ Admin Commands | Group: flask admin
 Admins manage drivers, areas, and streets.
-List Users
+### List Users
+```bash
+flask admin list [string|json]
+```
 
- flask admin list [string|json]
+### Create Driver
+```bash
+flask admin create_driver <username> <password>
+```
+
+### Delete Driver
+```bash
+flask admin delete_driver <driver_id>
+```
+
+### Add Area
+```bash
+flask admin add_area <name>
+```
+
+### Add Street
+```bash
+flask admin add_street <area_id> <name>
+```
+
+### Delete Area
+```bash
+flask admin delete_area <area_id>
+```
+
+### Delete Street
+```bash
+flask admin delete_street <street_id>
+```
+
+### View All Areas
+```bash
+flask admin view_all_areas
+```
+
+### View All Streets
+```bash
+flask admin view_all_streets
+```
 
 
-Create Driver
-
- flask admin create_driver <username> <password>
-
-
-Delete Driver
-
- flask admin delete_driver <driver_id>
-
-
-Add Area
-
- flask admin add_area <name>
-
-
-Add Street
-
- flask admin add_street <area_id> <name>
-
-
-Delete Area
-
- flask admin delete_area <area_id>
-
-
-Delete Street
-
- flask admin delete_street <street_id>
-
-
-View All Areas
-
- flask admin view_all_areas
-
-
-View All Streets
-
- flask admin view_all_streets
-
-
-
-🚐 Driver Commands
-Group: flask driver
+## 🚐 Driver Commands | Group: flask driver
 Drivers manage drives and stops.
-Schedule Drive
-
- flask driver schedule_drive YYYY-MM-DD HH:MM
- Prompts to select area & street.
-
-
-Cancel Drive
-
- flask driver cancel_drive <drive_id>
+### Schedule Drive
+```bash
+flask driver schedule_drive YYYY-MM-DD HH:MM
+```
+Prompts to select area & street.
 
 
-View My Drives
+### Cancel Drive
+```bash
+flask driver cancel_drive <drive_id>
+```
 
- flask driver view_my_drives
+### View My Drives
+```bash
+flask driver view_my_drives
+```
+
+### Start Drive
+```bash
+flask driver start_drive <drive_id>
+```
+
+### End Drive
+```bash
+flask driver end_drive
+```
+
+### View Requested Stops
+```bash
+flask driver view_requested_stops <drive_id>
+```
 
 
-Start Drive
-
- flask driver start_drive <drive_id>
-
-
-End Drive
-
- flask driver end_drive
-
-
-View Requested Stops
-
- flask driver view_requested_stops <drive_id>
-
-
-
-🏠 Resident Commands
-Group: flask resident
+## 🏠 Resident Commands | Group: flask resident
 Residents can create accounts, request stops, and view their inbox.
-Create Resident
-
- flask resident create <username> <password>
- Prompts for area, street, and house number.
-
-
-Request Stop
-
- flask resident request_stop
+### Create Resident
+```bash
+flask resident create <username> <password>
+```
+Prompts for area, street, and house number.
 
 
-Cancel Stop
+### Request Stop
+```bash
+flask resident request_stop
+```
 
- flask resident cancel_stop <drive_id>
+### Cancel Stop
+```bash
+flask resident cancel_stop <drive_id>
+```
 
+### View Inbox
+```bash
+flask resident view_inbox
+```
 
-View Inbox
-
- flask resident view_inbox
-
-
-View Driver Stats
-
- flask resident view_driver_stats <driver_id>
-
-
-
-🔑 Role Requirements
-flask admin ... → must be logged in as Admin
-
-
-flask driver ... → must be logged in as Driver
+### View Driver Stats
+```bash
+flask resident view_driver_stats <driver_id>
+```
 
 
-flask resident ... → must be logged in as Resident
+## 🔑 Role Requirements
+* flask admin ... → must be logged in as Admin
+* flask driver ... → must be logged in as Driver
+* flask resident ... → must be logged in as Resident
 
 
 General user commands (login/logout/view_street_drives) are available to all.
-If you are adding models you may need to migrate the database with the commands given in the previous database migration section. Alternateively you can delete you database file.
