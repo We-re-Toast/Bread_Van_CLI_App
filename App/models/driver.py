@@ -93,7 +93,6 @@ class Driver(User):
                         f"CANCELLED: Drive {drive.id} by {self.id} on {drive.date} at {drive.time}"
                     )
                 db.session.commit()
-            return drive
         return None
 
     def view_drives(self):

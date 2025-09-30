@@ -46,6 +46,11 @@ def initialize():
                      status="Available",
                      areaId=area2.id,
                      streetId=None)
+    driver2 = Driver(username="steve",
+                     password="stevepass",
+                     status="Busy",
+                     areaId=area2.id,
+                     streetId=street22.id)
     db.session.add_all([driver1, driver2])
     db.session.commit()
 

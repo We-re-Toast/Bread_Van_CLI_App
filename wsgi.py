@@ -20,7 +20,7 @@ migrate = get_migrate(app)
 def init():
     initialize()
     print('Welcome to the Bread Van App!')
-
+    print("For documentation, visit: https://github.com/LiannMaicoo/Bread_Van_CLI_App")
 
 
 # User Commands
@@ -98,26 +98,27 @@ def view_street_drives_command():
         print("No drives scheduled for this street.")
         return
 
-    print("\nAll Scheduled Drives on {drives[0].street.name}, {drives[0].area.name}:")
+    print(
+        f"\nAll Scheduled Drives on {drives[0].street.name}, {drives[0].area.name}:"
+    )
     print("-" * 70)
     print(f"{'Drive ID':<10} {'Date':<12} {'Time':<8} {'Driver':<20}")
     print("-" * 70)
     for drive in drives:
         date_str = drive.date.strftime("%Y-%m-%d")
         time_str = drive.time.strftime("%H:%M")
-        print(f"{drive.id:<10} {date_str:<12} {time_str:<8} {drive.driver.username:<20}")
+        print(
+            f"{drive.id:<10} {date_str:<12} {time_str:<8} {drive.driverId:<20}"
+        )
     print("\n")
 
 
-app.cli.add_command(user_cli) 
+app.cli.add_command(user_cli)
 
-
-
-
-# Admin Commands 
+# Admin Commands
 ##################################################################################
-admin_cli = AppGroup('admin', help='Admin commands for managing areas and streets')
-
+admin_cli = AppGroup('admin',
+                     help='Admin commands for managing areas and streets')
 @admin_cli.command("list", help="Lists users in the database")
 @click.argument("format", default="string")
 def list_user_command(format):
@@ -146,16 +147,16 @@ def create_driver_command(username, password):
     admin = require_admin()
     if not admin:
         return
-        
+
     if username is None or password is None:
         print("Username and password are required.")
         return
-        
+
     existing_user = User.query.filter_by(username=username).first()
     if existing_user:
         print("Username already taken.")
         return
-        
+
     admin.create_driver(username, password)
     print(f"Driver {username} created!")
 
@@ -194,12 +195,12 @@ def add_street_command(area_id, name):
     admin = require_admin()
     if not admin:
         return
-        
+
     area = Area.query.get(area_id)
     if not area:
         print("Invalid area ID.")
         return
-        
+
     street = admin.add_street(area_id, name)
     print(f"Street '{street.name}' added to area '{area.name}'.")
 
@@ -231,9 +232,10 @@ def delete_street_command(street_id):
     if not street:
         print("Invalid street ID.")
         return
-        
+
     admin.delete_street(street_id)
     print(f"Street '{street.name}' deleted.")
+
 
 @admin_cli.command("view_all_areas", help="View all areas")
 def view_all_areas_command():
@@ -251,6 +253,7 @@ def view_all_areas_command():
         print(f"{area.id}. {area.name}")
     print("\n")
 
+
 @admin_cli.command("view_all_streets", help="View all streets")
 def view_all_streets_command():
     admin = require_admin()
@@ -267,10 +270,8 @@ def view_all_streets_command():
         print(f"{street.id}. {street.name} (Area ID: {street.areaId})")
     print("\n")
 
+
 app.cli.add_command(admin_cli)
-
-
-
 
 # Driver Commands
 ##################################################################################
@@ -331,6 +332,16 @@ def schedule_drive_command(date_str, time_str):
 
     chosen_street = streets[chosen_index - 1]
 
+    existing_drive = Drive.query.filter_by(areaId=chosen_area.id,
+                                          streetId=chosen_street.id,
+                                          date=date).first()
+
+    if existing_drive:
+        confirm = input(f"A driver (ID {existing_drive.driverId}) already has a drive scheduled for this area/street on {date_str}. Confirm scheduling? (y/n): ")
+        if confirm.lower() != 'y':
+            print("Drive scheduling cancelled.")
+            return
+
     driver.schedule_drive(chosen_area.id, chosen_street.id, date_str, time_str)
     print(
         f"\nDrive scheduled for {date} at {time} on {chosen_street.name}, {chosen_area.name}"
@@ -354,19 +365,26 @@ def view_drives_command():
     if not driver:
         return
 
-    drives = [d for d in driver.view_drives() if d.status in ("Upcoming", "In Progress")]
+    drives = [
+        d for d in driver.view_drives()
+        if d.status in ("Upcoming", "In Progress")
+    ]
     if not drives:
         print("No scheduled drives.")
         return
 
     print("\nYour Scheduled Drives:")
     print("-" * 70)
-    print(f"{'Drive ID':<10} {'Date':<12} {'Time':<8} {'Area':<20} {'Street':<20}")
+    print(
+        f"{'Drive ID':<10} {'Date':<12} {'Time':<8} {'Area':<20} {'Street':<20}"
+    )
     print("-" * 70)
     for drive in drives:
         date_str = drive.date.strftime("%Y-%m-%d")
         time_str = drive.time.strftime("%H:%M")
-        print(f"{drive.id:<10} {date_str:<12} {time_str:<8} {drive.area.name:<20} {drive.street.name:<20}")
+        print(
+            f"{drive.id:<10} {date_str:<12} {time_str:<8} {drive.area.name:<20} {drive.street.name:<20}"
+        )
     print("\n")
 
 
@@ -377,12 +395,15 @@ def start_drive_command(drive_id):
     if not driver:
         return
 
-    current_drive = Drive.query.filter_by(driverId=driver.id, status="In Progress").first()
+    current_drive = Drive.query.filter_by(driverId=driver.id,
+                                          status="In Progress").first()
     if current_drive:
         print(f"You are already on drive {current_drive.id}.")
         return
 
-    drive = Drive.query.filter_by(driverId=driver.id, id=drive_id, status="Upcoming").first()
+    drive = Drive.query.filter_by(driverId=driver.id,
+                                  id=drive_id,
+                                  status="Upcoming").first()
     if not drive:
         print("Drive not found or cannot be started.")
         return
@@ -430,9 +451,6 @@ def view_requested_stops_command(driveId):
 
 
 app.cli.add_command(driver_cli)
-
-
-
 
 # Resident Commands
 ##################################################################################
@@ -514,7 +532,9 @@ def request_stop_command():
     for drive in drives:
         date_str = drive.date.strftime("%Y-%m-%d")
         time_str = drive.time.strftime("%H:%M")
-        print(f"{drive.id:<10} {date_str:<12} {time_str:<8} {drive.driverId:<20}")
+        print(
+            f"{drive.id:<10} {date_str:<12} {time_str:<8} {drive.driverId:<20}"
+        )
     print("\n")
 
     chosen_drive = click.prompt("Select a drive by ID to request a stop",
@@ -523,10 +543,8 @@ def request_stop_command():
         print("Invalid drive choice.")
         return
 
-    existing_stop = Stop.query.filter_by(
-        driveId=chosen_drive,
-        residentId=resident.id
-    ).first()
+    existing_stop = Stop.query.filter_by(driveId=chosen_drive,
+                                         residentId=resident.id).first()
 
     if existing_stop:
         print(f"You have already requested a stop for drive {chosen_drive}.")
@@ -536,21 +554,23 @@ def request_stop_command():
     print(f"Stop requested for drive {chosen_drive}.")
 
 
-@resident_cli.command("cancel_stop", help="Cancel a previously requested Stop from a drive")
+@resident_cli.command("cancel_stop",
+                      help="Cancel a previously requested Stop from a drive")
 @click.argument("drive_id")
 def cancel_stop_command(drive_id):
     resident = require_resident()
     if not resident:
         return
 
-    stop = Stop.query.filter_by(driveId=drive_id, residentId=resident.id).first()
+    stop = Stop.query.filter_by(driveId=drive_id,
+                                residentId=resident.id).first()
     if not stop:
         print("No stop requested for this drive.")
         return
 
     resident.cancel_stop(stop.id)
     print(f"Stop for drive {drive_id} cancelled.")
-    
+
 
 @resident_cli.command("view_inbox",
                       help="View notifications in the resident's inbox")
@@ -605,8 +625,6 @@ def view_driver_stats_command(driver_id):
 app.cli.add_command(resident_cli)
 
 
-
-
 # Helper Commands
 ##################################################################################
 def require_admin():
@@ -620,6 +638,7 @@ def require_admin():
 
     print("Must be logged in as a admin to perform this action.")
     return None
+
 
 def require_driver():
     user = User.query.filter_by(logged_in=True).first()

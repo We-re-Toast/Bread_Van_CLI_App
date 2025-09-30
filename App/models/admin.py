@@ -28,6 +28,7 @@ class Admin(User):
                          streetId=None)
         db.session.add(driver)
         db.session.commit()
+        return driver
 
     def delete_driver(self, driverId):
         driver = Driver.query.get(driverId)

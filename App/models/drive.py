@@ -5,7 +5,7 @@ class Drive(db.Model):
     driverId = db.Column(db.Integer, db.ForeignKey('driver.id'), nullable=False)
     areaId = db.Column(db.Integer, db.ForeignKey('area.id'), nullable=False)
     streetId = db.Column(db.Integer, db.ForeignKey('street.id'), nullable=False)
-    date = db.Column(db.DateTime, nullable=False)
+    date = db.Column(db.Date, nullable=False)
     time = db.Column(db.Time, nullable=False)
     status = db.Column(db.String(20), nullable=False)
 
