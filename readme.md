@@ -12,7 +12,16 @@ $ pip install -r requirements.txt
 ```bash
 flask init
 ```
-This creates and initializes all tables.
+This creates and initializes all accounts and tables.
+* Admin
+  * admin / adminpass
+* Drivers
+  * bob / bobpass
+  * mary / marypass
+* Residents
+  * alice / alicepass
+  * jane / janepass
+  * john / johnpass
 
 ### Run any CLI command using:
 ```bash
@@ -94,6 +103,7 @@ Drivers manage drives and stops.
 flask driver schedule_drive YYYY-MM-DD HH:MM
 ```
 Prompts to select area & street.
+Drives cannot be scheduled in the past nor more than 1 year ahead of the current date.
 
 
 ### Cancel Drive
@@ -123,13 +133,13 @@ flask driver view_requested_stops <drive_id>
 
 
 ## 🏠 Resident Commands | Group: flask resident
-Residents can create accounts, request stops, and view their inbox.
+Residents can request stops and view their inbox.
 ### Create Resident
 ```bash
 flask resident create <username> <password>
 ```
-Prompts for area, street, and house number.
-
+Prompts for area, street, and house number. 
+A logged-in account is not required to create a resident.
 
 ### Request Stop
 ```bash
