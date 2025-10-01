@@ -57,11 +57,6 @@ class Driver(User):
             )
             return
 
-        if date < datetime.now().date() or (date == datetime.now().date()
-                                            and time < datetime.now().time()):
-            print("Cannot schedule a drive in the past.")
-            return
-
         new_drive = Drive(driverId=self.id,
                           areaId=areaId,
                           streetId=streetId,

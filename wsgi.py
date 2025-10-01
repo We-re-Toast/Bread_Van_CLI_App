@@ -1,7 +1,7 @@
 import click, pytest, sys
 from flask.cli import with_appcontext, AppGroup
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from App.database import db, get_migrate
 from App.models import User, Admin, Driver, Resident, Drive, Stop, Area, Street
@@ -296,6 +296,17 @@ def schedule_drive_command(date_str, time_str):
         time = datetime.strptime(time_str, "%H:%M").time()
     except ValueError:
         print("Invalid time format. Use HH:MM (24-hour format).")
+        return
+
+    scheduled_datetime = datetime.combine(date, time)
+
+    if scheduled_datetime < datetime.now():
+        print("Cannot schedule a drive in the past.")
+        return
+
+    one_year_later = datetime.now() + timedelta(days=365)
+    if scheduled_datetime > one_year_later:
+        print("Cannot schedule a drive more than 1 year in advance.")
         return
 
     areas = Area.query.all()
