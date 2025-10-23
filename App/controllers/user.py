@@ -32,3 +32,19 @@ def update_user(id, username):
         db.session.commit()
         return True
     return None
+
+def user_login(username, password):
+    user = db.session.execute(db.select(User).filter_by(username=username)).scalar_one_or_none()
+    if user and user.check_password(password):
+        user.logged_in = True
+        db.session.commit()
+        return user
+    raise ValueError("Invalid username or password.")
+
+def user_logout(user):
+    user.logged_in = False
+    db.session.commit()
+    return user
+
+def user_view_street_drives(user, area_id, street_id):
+    return user.view_street_drives(area_id, street_id)
