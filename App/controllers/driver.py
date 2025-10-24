@@ -1,4 +1,4 @@
-from App.models import Driver, Drive, Street
+from App.models import Driver, Drive, Street, Item, DriverStock
 from App.database import db
 from datetime import datetime
 
@@ -47,3 +47,23 @@ def driver_view_requested_stops(driver, drive_id):
     if not stops:
         return []
     return stops
+
+def driver_update_stock(driver, item_id, quantity):
+    item =  Item.query.get(item_id)
+    if not item:
+        raise ValueError("Invalid item ID.")
+    stock =  DriverStock.query.filter_by(driverId=driver.id, itemId=item_id).first()
+    if stock:
+        stock.quantity = quantity
+    else:
+        stock = DriverStock(driverId=driver.id, itemId=item_id, quantity=quantity)
+        db.session.add(stock)
+    db.session.commit()
+    return stock
+
+def driver_view_stock(driver):
+    stocks = DriverStock.query.filter_by(driverId=driver.id).all() 
+    return stocks
+    
+    
+    

@@ -1,4 +1,4 @@
-from App.models import Resident, Stop, Drive, Area, Street
+from App.models import Resident, Stop, Drive, Area, Street, DriverStock
 from App.database import db
 
 # All resident-related business logic will be moved here as functions
@@ -33,3 +33,10 @@ def resident_view_driver_stats(resident, driver_id):
     if not driver:
         raise ValueError("Driver not found.")
     return driver
+
+def resident_view_stock(resident, driver_id):
+    driver = resident.view_driver_stats(driver_id)
+    if not driver:
+         raise ValueError("Driver not found.")
+    stocks =  DriverStock.query.filter_by(driverId=driver_id).all()
+    return stocks
