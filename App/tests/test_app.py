@@ -5,14 +5,7 @@ from datetime import date, time
 from App.main import create_app
 from App.database import db, create_db
 from App.models import User, Resident, Driver, Admin, Area, Street, Drive, Stop, Item, DriverStock
-from App.controllers import (
-    create_user,
-    get_all_users_json,
-    login,
-    get_user,
-    get_user_by_username,
-    update_user
-)
+from App.controllers import *
 
 
 LOGGER = logging.getLogger(__name__)
