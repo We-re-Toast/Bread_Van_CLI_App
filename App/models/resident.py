@@ -37,8 +37,8 @@ class Resident(User):
 
     def get_json(self):
         user_json = super().get_json()
-        user_json['area'] = self.area.name
-        user_json['street'] = self.street.name
+        user_json['area'] = getattr(self.area, 'name', None) if self.area is not None else None
+        user_json['street'] = getattr(self.street, 'name', None) if self.street is not None else None
         user_json['houseNumber'] = self.houseNumber
         user_json['inbox'] = self.inbox
         return user_json

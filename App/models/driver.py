@@ -29,8 +29,9 @@ class Driver(User):
     def get_json(self):
         user_json = super().get_json()
         user_json['status'] = self.status
-        user_json['area'] = self.area.name
-        user_json['street'] = self.street.name
+        # area or street may be None if not set; guard against that
+        user_json['area'] = getattr(self.area, 'name', None) if self.area is not None else None
+        user_json['street'] = getattr(self.street, 'name', None) if self.street is not None else None
         return user_json
 
     def login(self, password):

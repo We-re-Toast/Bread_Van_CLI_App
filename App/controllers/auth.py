@@ -8,7 +8,9 @@ def login(username, password):
   user = result.scalar_one_or_none()
   if user and user.check_password(password):
     # Store ONLY the user id as a string in JWT 'sub'
-    return create_access_token(identity=str(user.id))
+    # Include user role in additional claims so views can authorize by role
+    role = getattr(user, 'role', None)
+    return create_access_token(identity=str(user.id), additional_claims={"role": role})
   return None
 
 

@@ -13,6 +13,7 @@ from App.controllers import (
     setup_jwt,
     add_auth_context
 )
+from App.api.errors import register_error_handlers
 
 from App.views import views, setup_admin
 
@@ -21,6 +22,7 @@ from App.views import views, setup_admin
 def add_views(app):
     for view in views:
         app.register_blueprint(view)
+    # API views live under App/views and are registered above
 
 def create_app(overrides={}):
     app = Flask(__name__, static_url_path='/static')
@@ -33,6 +35,7 @@ def create_app(overrides={}):
     init_db(app)
     jwt = setup_jwt(app)
     setup_admin(app)
+    register_error_handlers(app)
     @jwt.invalid_token_loader
     @jwt.unauthorized_loader
     def custom_unauthorized_response(error):
