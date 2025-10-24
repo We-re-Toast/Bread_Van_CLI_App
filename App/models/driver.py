@@ -29,9 +29,8 @@ class Driver(User):
     def get_json(self):
         user_json = super().get_json()
         user_json['status'] = self.status
-        # area or street may be None if not set; guard against that
-        user_json['area'] = getattr(self.area, 'name', None) if self.area is not None else None
-        user_json['street'] = getattr(self.street, 'name', None) if self.street is not None else None
+        user_json['areaId'] = self.areaId
+        user_json['streetId'] = self.streetId
         return user_json
 
     def login(self, password):
@@ -82,7 +81,9 @@ class Driver(User):
             drive.status = "Cancelled"
             db.session.commit()
 
-            street = Street.query.get(self.streetId)
+            street = None
+            if self.streetId is not None:
+                street = Street.query.get(self.streetId)
             if street:
                 for resident in street.residents:
                     resident.receive_notif(
@@ -109,7 +110,6 @@ class Driver(User):
         drive = Drive.query.get(driveId)
         if drive:
             self.status = "Available"
-            self.streetId = None
             drive.status = "Completed"
             db.session.commit()
             return drive

@@ -26,7 +26,7 @@ class Drive(db.Model):
             'driverId': self.driverId,
             'areaId': self.areaId,
             'streetId': self.streetId,
-            'date': self.date,
-            'time': self.time,
+            'date': self.date.strftime("%Y-%m-%d") if self.date else None,
+            'time': self.time.strftime("%H:%M:%S") if self.time else None,
             'status': self.status
         }

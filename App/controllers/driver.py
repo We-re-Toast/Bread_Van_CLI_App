@@ -1,6 +1,6 @@
 from App.models import Driver, Drive, Street, Item, DriverStock
 from App.database import db
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # All driver-related business logic will be moved here as functions
 
@@ -13,11 +13,10 @@ def driver_schedule_drive(driver, area_id, street_id, date_str, time_str):
     scheduled_datetime = datetime.combine(date, time)
     if scheduled_datetime < datetime.now():
         raise ValueError("Cannot schedule a drive in the past.")
-    one_year_later = datetime.now() + timedelta(days=365)
+    one_year_later = datetime.now() + timedelta(days=60)
     if scheduled_datetime > one_year_later:
-        raise ValueError("Cannot schedule a drive more than 1 year in advance.")
+        raise ValueError("Cannot schedule a drive more than 60 days in advance.")
     existing_drive = Drive.query.filter_by(areaId=area_id, streetId=street_id, date=date).first()
-    # No prompt/confirm here; CLI should handle user confirmation
     new_drive = driver.schedule_drive(area_id, street_id, date_str, time_str)
     return new_drive
 

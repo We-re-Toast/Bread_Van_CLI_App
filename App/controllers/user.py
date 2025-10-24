@@ -1,4 +1,4 @@
-from App.models import User
+from App.models import User, Driver
 from App.database import db
 
 def create_user(username, password):
@@ -37,12 +37,16 @@ def user_login(username, password):
     user = db.session.execute(db.select(User).filter_by(username=username)).scalar_one_or_none()
     if user and user.check_password(password):
         user.logged_in = True
+        if isinstance(user, Driver):
+            user.status = "Available"
         db.session.commit()
         return user
     raise ValueError("Invalid username or password.")
 
 def user_logout(user):
     user.logged_in = False
+    if isinstance(user, Driver):
+        user.status = "Offline"
     db.session.commit()
     return user
 

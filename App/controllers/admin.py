@@ -39,6 +39,7 @@ def admin_add_item(name, price, description, tags):
     item = Item(name=name, price=price, description=description, tags=tags)
     db.session.add(item)
     db.session.commit()
+    return item
 
 def admin_delete_area(area_id):
     area = Area.query.get(area_id)

@@ -27,7 +27,7 @@ class UserUnitTests(unittest.TestCase):
     
     def test_hashed_password(self):
         password = "mypass"
-        hashed = generate_password_hash(password, method='sha256')
+        hashed = generate_password_hash(password, method='pbkdf2:sha256')
         newuser = User("bob", password)
         assert newuser.password != password
 
@@ -194,15 +194,11 @@ class DriverStockUnitTests(unittest.TestCase):
 # scope="class" would execute the fixture once and resued for all methods in the class
 @pytest.fixture(autouse=True, scope="function")
 def empty_db():
-    app = create_app({'TESTING': True, 'SQLALCHEMY_DATABASE_URI': 'sqlite:///test.db'})
-    create_db()
+    app = create_app({'TESTING': True, 'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:'})
+    db.create_all()    
     yield app.test_client()
     db.drop_all()
 
-
-def test_authenticate():
-    user = create_user("bob", "bobpass")
-    assert login("bob", "bobpass") != None
 
 class UsersIntegrationTests(unittest.TestCase):
 
@@ -211,21 +207,26 @@ class UsersIntegrationTests(unittest.TestCase):
         assert user.username == "rick"
 
     def test_get_all_users_json(self):
+        create_user("bob", "bobpass")
+        create_user("rick", "ronniepass")
         users_json = get_all_users_json()
         self.assertListEqual([{"id":1, "username":"bob"}, {"id":2, "username":"rick"}], users_json)
 
     # Tests data changes in the database
     def test_update_user(self):
+        create_user("rick", "ronniepass")
         update_user(1, "ronnie")
         user = get_user(1)
         assert user.username == "ronnie"
 
     def test_login(self):
-        user = login("ronnie", "ronniepass")
+        create_user("ronnie", "ronniepass")
+        user = user_login("ronnie", "ronniepass")
         assert user.username == "ronnie"
 
     def test_logout(self):
-        user = login("ronnie", "ronniepass")
+        create_user("ronnie", "ronniepass")
+        user = user_login("ronnie", "ronniepass")
         user_logout(user)
         assert user.logged_in == False
         if isinstance(user, Driver):
@@ -235,82 +236,83 @@ class UsersIntegrationTests(unittest.TestCase):
 
 class ResidentsIntegrationTests(unittest.TestCase):
     
-    @classmethod
-    def setUpClass(cls):
-        cls.area = admin_add_area("St. Augustine")
-        cls.street = admin_add_street(area.id, "Warner Street")
-        cls.driver = admin_create_driver("driver1", "pass")
-        cls.resident = resident_create("john", "johnpass", area.id, street.id, 123)
-        cls.drive = driver_schedule_drive(driver.id, area.id, street.id, "2025-11-10", "11:30")
-        cls.item = admin_add_item("Whole-Grain Bread", 19.50, "Healthy whole-grain loaf", ["whole-grain", "healthy"])
+    def setUp(self):
+        self.area = admin_add_area("St. Augustine")
+        self.street = admin_add_street(self.area.id, "Warner Street")
+        self.driver = admin_create_driver("driver1", "pass")
+        self.resident = resident_create("john", "johnpass", self.area.id, self.street.id, 123)
+        self.drive = driver_schedule_drive(self.driver, self.area.id, self.street.id, "2025-11-10", "11:30")
+        self.item = admin_add_item("Whole-Grain Bread", 19.50, "Healthy whole-grain loaf", ["whole-grain", "healthy"])
 
 
     def test_request_stop(self):
-        stop = resident_request_stop(self.resident.id, self.drive.id)
+        stop = resident_request_stop(self.resident, self.drive.id)
         self.assertIsNotNone(stop)
 
     def test_cancel_stop(self):
-        stop = resident_request_stop(self.resident.id, self.drive.id)
-        resident_cancel_stop(stop.id)
+        stop = resident_request_stop(self.resident, self.drive.id)
+        resident_cancel_stop(self.resident, stop.id)
         self.assertIsNone(Stop.query.filter_by(id=stop.id).first())
 
     def test_view_driver_stats(self):
-        driver = resident_view_driver_stats(self.driver.id)
+        driver = resident_view_driver_stats(self.resident, self.driver.id)
         self.assertIsNotNone(driver)
 
     def test_view_stock(self):
-        driver_update_stock(self.driver.id, self.item.id, 30)
-        stock = resident_view_stock(self.driver.id)
+        driver_update_stock(self.driver, self.item.id, 30)
+        stock = resident_view_stock(self.resident, self.driver.id)
         self.assertIsNotNone(stock)
 
 
 class DriversIntegrationTests(unittest.TestCase):
                 
-    @classmethod
-    def setUpClass(cls):
-        cls.area = admin_add_area("St. Augustine")
-        cls.street = admin_add_street(area.id, "Warner Street")
-        cls.driver = admin_create_driver("driver1", "pass")
-        cls.resident = resident_create("john", "johnpass", area.id, street.id, 123)
-        cls.drive = driver_schedule_drive(driver.id, area.id, street.id, "2025-11-10", "11:30")
-        cls.stop = resident_request_stop(resident.id, drive.id)
-        cls.item = admin_add_item("Whole-Grain Bread", 19.50, "Healthy whole-grain loaf", ["whole-grain", "healthy"])
+    def setUp(self):
+        self.area = admin_add_area("St. Augustine")
+        self.street = admin_add_street(self.area.id, "Warner Street")
+        self.driver = admin_create_driver("driver1", "pass")
+        self.resident = resident_create("john", "johnpass", self.area.id, self.street.id, 123)
+        self.drive = driver_schedule_drive(self.driver, self.area.id, self.street.id, "2025-11-10", "11:30")
+        self.stop = resident_request_stop(self.resident, self.drive.id)
+        self.item = admin_add_item("Whole-Grain Bread", 19.50, "Healthy whole-grain loaf", ["whole-grain", "healthy"])
 
     def test_schedule_drive(self):
-        drive = driver_schedule_drive(self.driver.id, self.area.id, self.street.id, "2025-12-31", "9:00")
+        drive = driver_schedule_drive(self.driver, self.area.id, self.street.id, "2025-11-30", "09:00")
         self.assertIsNotNone(drive)
 
     def test_cancel_drive(self):
-        driver_cancel_drive(self.drive.id)
-        self.assertIsNone(Drive.query.filter_by(id=self.drive.id).first())
+        drive = driver_schedule_drive(self.driver, self.area.id, self.street.id, "2025-11-13", "08:15")
+        driver_cancel_drive(self.driver, drive.id)
+        assert drive.status == "Cancelled"
 
     def test_view_drives(self):
-        drives = driver_view_drives(self.driver.id)
+        drives = driver_view_drives(self.driver)
         self.assertIsNotNone(drives)
 
     def test_start_drive(self):
-        driver_start_drive(self.drive.id)
+        driver_start_drive(self.driver, self.drive.id)
         drive = Drive.query.filter_by(id=self.drive.id).first()
-        assert drive.status == "In Progress"
+        assert self.drive.status == "In Progress"
+        assert self.driver.status == "Busy"
 
     def test_end_drive(self):
-        driver_start_drive(self.drive.id)
-        driver_end_drive(self.drive.id)
+        driver_start_drive(self.driver, self.drive.id)
+        driver_end_drive(self.driver)
         drive = Drive.query.filter_by(id=self.drive.id).first()
-        assert drive.status == "Completed"
+        assert self.drive.status == "Completed"
+        assert self.driver.status == "Available"
 
     def test_view_requested_stops(self):
-        stops = driver_view_requested_stops(self.drive.id)
+        stops = driver_view_requested_stops(self.driver, self.drive.id)
         self.assertIsNotNone(stops)
     
     def test_update_stock(self):
         newquantity = 30
-        driver_update_stock(self.driver.id, self.item.id, newquantity)
+        driver_update_stock(self.driver, self.item.id, newquantity)
         stock = DriverStock.query.filter_by(driverId=self.driver.id, itemId=self.item.id).first()
-         assert stock.quantity == newquantity
+        assert stock.quantity == newquantity
 
     def test_view_stock(self):
-        stock = driver_view_stock(self.driver.id)
+        stock = driver_view_stock(self.driver)
         self.assertIsNotNone(stock)
 
 

@@ -20,6 +20,7 @@ class User(db.Model):
         self.username = username
         self.set_password(password)
         self.logged_in = False
+        self.inbox = []
 
     def get_json(self):
         return{
