@@ -7,8 +7,6 @@ App/custom_config.py
 # C extensions
 *.so
 
-migrations/*
-
 # Distribution / packaging
 .Python
 build/
