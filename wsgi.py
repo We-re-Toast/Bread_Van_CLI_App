@@ -2,9 +2,10 @@ import click, pytest, sys
 from flask.cli import with_appcontext, AppGroup
 
 from datetime import datetime, timedelta
-from flask_migrate import upgrade
+from flask_migrate import Migrate, upgrade
 
 from App.database import db, get_migrate
+from App.database import db
 from App.models import User, Admin, Driver, Resident, Drive, Stop, Area, Street
 from App.main import create_app
 from App.controllers import (get_user, get_all_users_json, get_all_users,
@@ -44,11 +45,12 @@ from App.controllers.user import (
 
 app = create_app()
 migrate = get_migrate(app)
+
 with app.app_context():
     upgrade()
     admin = User.query.filter_by(username='admin').first()
     if not admin:
-        new_admin = User(username='admin', password='adminpass', type='Admin')
+        new_admin = Admin(username='admin', password='adminpass')
         db.session.add(new_admin)
         db.session.commit()
 
