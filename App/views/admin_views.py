@@ -95,11 +95,11 @@ def create_street():
     return jsonify(out), 201
 
 
-@admin_views.route('/admin/streets/<int:street_id>', methods=['DELETE'])
+@admin_views.route('/admin/streets/<int:area_id>/<int:street_id>', methods=['DELETE'])
 @jwt_required()
 @role_required('Admin')
-def delete_street(street_id):
-    admin_controller.admin_delete_street(street_id)
+def delete_street(area_id, street_id):
+    admin_controller.admin_delete_street(area_id, street_id)
     return '', 204
 
 
