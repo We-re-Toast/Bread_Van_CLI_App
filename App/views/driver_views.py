@@ -12,7 +12,7 @@ driver_views = Blueprint('driver_views', __name__)
 
 @driver_views.route('/driver/me', methods=['GET'])
 @jwt_required()
-@role_required('driver')
+@role_required('Driver')
 def me():
     uid = current_user_id()
     return jsonify({'id': uid}), 200
@@ -20,7 +20,7 @@ def me():
 
 @driver_views.route('/driver/drives', methods=['GET'])
 @jwt_required()
-@role_required('driver')
+@role_required('Driver')
 def list_drives():
     params = request.args
     page = int(params.get('page', 1))
@@ -36,9 +36,10 @@ def list_drives():
 
 @driver_views.route('/driver/drives', methods=['POST'])
 @jwt_required()
-@role_required('driver')
+@role_required('Driver')
 def create_drive():
     data = request.get_json() or {}
+    area_id = data.get('area_id')
     street_id = data.get('street_id')
     date = data.get('date')
     time = data.get('time')
@@ -46,14 +47,14 @@ def create_drive():
         return jsonify({'error': {'code': 'validation_error', 'message': 'street_id, date and time required'}}), 422
     uid = current_user_id()
     driver = user_controller.get_user(uid)
-    drive = driver_controller.driver_schedule_drive(driver, None, street_id, date, time)
+    drive = driver_controller.driver_schedule_drive(driver, area_id, street_id, date, time)
     out = drive.get_json() if hasattr(drive, 'get_json') else drive
     return jsonify(out), 201
 
 
 @driver_views.route('/driver/drives/<int:drive_id>/start', methods=['POST'])
 @jwt_required()
-@role_required('driver')
+@role_required('Driver')
 def start_drive(drive_id):
     uid = current_user_id()
     driver = user_controller.get_user(uid)
@@ -63,7 +64,7 @@ def start_drive(drive_id):
 
 @driver_views.route('/driver/drives/<int:drive_id>/end', methods=['POST'])
 @jwt_required()
-@role_required('driver')
+@role_required('Driver')
 def end_drive(drive_id):
     uid = current_user_id()
     driver = user_controller.get_user(uid)
@@ -73,7 +74,7 @@ def end_drive(drive_id):
 
 @driver_views.route('/driver/drives/<int:drive_id>/cancel', methods=['POST'])
 @jwt_required()
-@role_required('driver')
+@role_required('Driver')
 def cancel_drive(drive_id):
     uid = current_user_id()
     driver = user_controller.get_user(uid)
@@ -83,7 +84,7 @@ def cancel_drive(drive_id):
 
 @driver_views.route('/driver/drives/<int:drive_id>/requested-stops', methods=['GET'])
 @jwt_required()
-@role_required('driver')
+@role_required('Driver')
 def requested_stops(drive_id):
     uid = current_user_id()
     driver = user_controller.get_user(uid)

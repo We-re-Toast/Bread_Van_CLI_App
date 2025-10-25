@@ -10,7 +10,7 @@ resident_views = Blueprint('resident_views', __name__)
 
 @resident_views.route('/resident/me', methods=['GET'])
 @jwt_required()
-@role_required('resident')
+@role_required('Resident')
 def me():
     uid = current_user_id()
     return jsonify({'id': uid}), 200
@@ -18,7 +18,7 @@ def me():
 
 @resident_views.route('/resident/stops', methods=['POST'])
 @jwt_required()
-@role_required('resident')
+@role_required('Resident')
 def create_stop():
     data = request.get_json() or {}
     drive_id = data.get('drive_id')
@@ -33,7 +33,7 @@ def create_stop():
 
 @resident_views.route('/resident/stops/<int:stop_id>', methods=['DELETE'])
 @jwt_required()
-@role_required('resident')
+@role_required('Resident')
 def delete_stop(stop_id):
     uid = current_user_id()
     resident = user_controller.get_user(uid)
@@ -43,7 +43,7 @@ def delete_stop(stop_id):
 
 @resident_views.route('/resident/inbox', methods=['GET'])
 @jwt_required()
-@role_required('resident')
+@role_required('Resident')
 def inbox():
     uid = current_user_id()
     resident = user_controller.get_user(uid)
@@ -54,13 +54,16 @@ def inbox():
 
 @resident_views.route('/resident/driver-stats', methods=['GET'])
 @jwt_required()
-@role_required('resident')
+@role_required('Resident')
 def driver_stats():
     params = request.args
-    street_id = params.get('street_id')
-    from_date = params.get('from')
-    to_date = params.get('to')
+    driver_id = params.get('driver_id')
+    if not driver_id:
+        return jsonify({'error': {'code': 'validation_error', 'message': 'driver_id is required'}}), 422
     uid = current_user_id()
     resident = user_controller.get_user(uid)
-    stats = resident_controller.resident_view_driver_stats(resident, street_id)
+    try:
+        stats = resident_controller.resident_view_driver_stats(resident, int(driver_id))
+    except ValueError as e:
+        return jsonify({'error': {'code': 'not_found', 'message': str(e)}}), 404
     return jsonify({'stats': stats}), 200
