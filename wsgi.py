@@ -48,8 +48,8 @@ migrate = get_migrate(app)
 
 with app.app_context():
     upgrade()
-    admin = User.query.filter_by(username='admin').first()
-    if not admin:
+    existing = db.session.query(User).filter_by(username='admin').first()
+    if not existing:
         new_admin = Admin(username='admin', password='adminpass')
         db.session.add(new_admin)
         db.session.commit()
