@@ -29,14 +29,14 @@ def identify_page():
 def login_action():
     data = request.form
     token = login(data['username'], data['password'])
-    response = redirect(request.referrer)
+
     if not token:
         flash('Bad username or password given')
         return jsonify({'error': 'Invalid credentials'}), 401
-    else:
-        flash('Login Successful')
-        response = jsonify({'message': 'Login successful'})
-        set_access_cookies(response, token) 
+
+    flash('Login Successful')
+    response = jsonify({'message': 'Login successful'})
+    set_access_cookies(response, token)
     return response
 
 @auth_views.route('/logout', methods=['GET'])

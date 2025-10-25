@@ -4,13 +4,11 @@ from App.models import User
 from App.database import db
 
 def login(username, password):
-  result = db.session.execute(db.select(User).filter_by(username=username))
-  user = result.scalar_one_or_none()
+  user = User.query.filter_by(username=username).first()
   if user and user.check_password(password):
-    # Store ONLY the user id as a string in JWT 'sub'
-    # Include user role in additional claims so views can authorize by role
-    role = getattr(user, 'role', None)
-    return create_access_token(identity=str(user.id), additional_claims={"role": role})
+      claims = {"role": user.type}  
+      token = create_access_token(identity=user.id, additional_claims=claims)
+      return token
   return None
 
 
