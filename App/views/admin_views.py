@@ -11,7 +11,7 @@ admin_views = Blueprint('admin_views', __name__)
 
 @admin_views.route('/admin/users', methods=['GET'])
 @jwt_required()
-@role_required('admin')
+@role_required('Admin')
 def list_users():
     role = request.args.get('role')
     users = user_controller.get_all_users_json() if hasattr(user_controller, 'get_all_users_json') else []
@@ -21,7 +21,7 @@ def list_users():
 
 @admin_views.route('/admin/drivers', methods=['POST'])
 @jwt_required()
-@role_required('admin')
+@role_required('Admin')
 def create_driver():
     data = request.get_json() or {}
     username = data.get('username')
@@ -35,7 +35,7 @@ def create_driver():
 
 @admin_views.route('/admin/drivers/<int:driver_id>', methods=['DELETE'])
 @jwt_required()
-@role_required('admin')
+@role_required('Admin')
 def delete_driver(driver_id):
     admin_controller.admin_delete_driver(driver_id)
     return '', 204
@@ -43,7 +43,7 @@ def delete_driver(driver_id):
 
 @admin_views.route('/admin/residents', methods=['POST'])
 @jwt_required()
-@role_required('admin')
+@role_required('Admin')
 def create_resident():
     data = request.get_json() or {}
     username = data.get('username')
@@ -62,7 +62,7 @@ def create_resident():
 
 @admin_views.route('/admin/areas', methods=['POST'])
 @jwt_required()
-@role_required('admin')
+@role_required('Admin')
 def create_area():
     data = request.get_json() or {}
     name = data.get('name')
@@ -75,7 +75,7 @@ def create_area():
 
 @admin_views.route('/admin/areas/<int:area_id>', methods=['DELETE'])
 @jwt_required()
-@role_required('admin')
+@role_required('Admin')
 def delete_area(area_id):
     admin_controller.admin_delete_area(area_id)
     return '', 204
@@ -83,7 +83,7 @@ def delete_area(area_id):
 
 @admin_views.route('/admin/streets', methods=['POST'])
 @jwt_required()
-@role_required('admin')
+@role_required('Admin')
 def create_street():
     data = request.get_json() or {}
     name = data.get('name')
@@ -97,7 +97,7 @@ def create_street():
 
 @admin_views.route('/admin/streets/<int:street_id>', methods=['DELETE'])
 @jwt_required()
-@role_required('admin')
+@role_required('Admin')
 def delete_street(street_id):
     admin_controller.admin_delete_street(street_id)
     return '', 204
@@ -105,7 +105,7 @@ def delete_street(street_id):
 
 @admin_views.route('/admin/areas', methods=['GET'])
 @jwt_required()
-@role_required('admin')
+@role_required('Admin')
 def list_areas():
     areas = admin_controller.admin_view_all_areas()
     items = [a.get_json() if hasattr(a, 'get_json') else a for a in (areas or [])]
@@ -114,7 +114,7 @@ def list_areas():
 
 @admin_views.route('/admin/streets', methods=['GET'])
 @jwt_required()
-@role_required('admin')
+@role_required('Admin')
 def list_streets():
     streets = admin_controller.admin_view_all_streets()
     items = [s.get_json() if hasattr(s, 'get_json') else s for s in (streets or [])]
