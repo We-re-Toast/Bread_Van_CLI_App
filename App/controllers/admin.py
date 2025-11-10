@@ -52,7 +52,7 @@ def admin_delete_street(area_id, street_id):
     area = Area.query.get(area_id)
     if not area:
         raise ValueError("Invalid area ID.")
-    street = Street.query.filter_by(areaId=area_id).get(street_id)
+    street = Street.query.filter_by(id=street_id, areaId=area_id).first()
     if not street:
         raise ValueError("Invalid street ID.")
     db.session.delete(street)

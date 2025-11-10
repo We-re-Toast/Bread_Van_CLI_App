@@ -241,7 +241,7 @@ class ResidentsIntegrationTests(unittest.TestCase):
         self.street = admin_add_street(self.area.id, "Warner Street")
         self.driver = admin_create_driver("driver1", "pass")
         self.resident = resident_create("john", "johnpass", self.area.id, self.street.id, 123)
-        self.drive = driver_schedule_drive(self.driver, self.area.id, self.street.id, "2025-11-10", "11:30")
+        self.drive = driver_schedule_drive(self.driver, self.area.id, self.street.id, "2025-12-31", "11:30")
         self.item = admin_add_item("Whole-Grain Bread", 19.50, "Healthy whole-grain loaf", ["whole-grain", "healthy"])
 
 
@@ -271,7 +271,7 @@ class DriversIntegrationTests(unittest.TestCase):
         self.street = admin_add_street(self.area.id, "Warner Street")
         self.driver = admin_create_driver("driver1", "pass")
         self.resident = resident_create("john", "johnpass", self.area.id, self.street.id, 123)
-        self.drive = driver_schedule_drive(self.driver, self.area.id, self.street.id, "2025-11-10", "11:30")
+        self.drive = driver_schedule_drive(self.driver, self.area.id, self.street.id, "2025-12-31", "11:30")
         self.stop = resident_request_stop(self.resident, self.drive.id)
         self.item = admin_add_item("Whole-Grain Bread", 19.50, "Healthy whole-grain loaf", ["whole-grain", "healthy"])
 
@@ -352,8 +352,8 @@ class AdminsIntegrationTests(unittest.TestCase):
     def test_delete_street(self):
         area = admin_add_area("Port-of-Spain")
         street = admin_add_street(area.id, "Fredrick Street")
-        admin_delete_street(street.id)
-        assert Street.query.filter_by(id=street.id).first() == None
+        admin_delete_street(area.id, street.id)
+        assert Street.query.filter_by(id=street.id, areaId=area.id).first() == None
 
     def test_view_all_streets(self):
         area = admin_add_area("Port-of-Spain")
