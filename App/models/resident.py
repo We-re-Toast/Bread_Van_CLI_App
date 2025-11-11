@@ -26,6 +26,11 @@ class Resident(User):
     __mapper_args__ = {
         "polymorphic_identity": "Resident",
     }
+    
+
+    def list():
+        return Resident.query.all()
+
 
     def __init__(self, username, password, areaId, houseNumber):
         super().__init__(username, password)

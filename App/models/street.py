@@ -10,6 +10,10 @@ class Street(db.Model):
     subscriptions = db.relationship('StreetSubscription', backref ='street')
    
     
+    def list():
+        return Street.query.all()
+
+
     def __init__(self, name, areaId):
         self.name = name
         self.areaId = areaId

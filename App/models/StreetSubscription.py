@@ -7,6 +7,8 @@ class StreetSubscription(db.Model):
    # street = db.relationship('Street', back_populates='subscriptions')
    #  resident = db.relationship('Resident', back_populates='subscriptions')
 
+    def list():
+        return StreetSubscription.query.all()
 
     def __init__(self, resident_id, street_id):
 
