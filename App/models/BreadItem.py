@@ -7,5 +7,6 @@ class BreadItem(db.Model):
     price = db.Column(db.Float, nullable = False)
     menus = db.relationship('MenuBreadItem', backref='bread_item')
     
-    
-  
+    def __init__(self, name, price):
+        self.name = name
+        self.price = price

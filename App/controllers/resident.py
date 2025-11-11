@@ -25,8 +25,7 @@ def resident_cancel_stop(resident, drive_id):
     resident.cancel_stop(stop.id)
     return stop
 
-def resident_view_inbox(resident):
-    return resident.view_inbox()
+
 
 def resident_view_driver_stats(resident, driver_id):
     driver = resident.view_driver_stats(driver_id)
@@ -40,3 +39,14 @@ def resident_view_stock(resident, driver_id):
          raise ValueError("Driver not found.")
     stocks =  DriverStock.query.filter_by(driverId=driver_id).all()
     return stocks
+
+# Observer pattern
+
+def resident_subscribe(resident, street_id):
+    return resident.subscribe(street_id)
+
+def resident_unsubscribe(resident, street_id):
+    return resident.unsubscribe(street_id)
+
+def resident_view_inbox(resident):
+    return resident.view_inbox()
