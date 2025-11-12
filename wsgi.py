@@ -4,7 +4,7 @@ from flask.cli import with_appcontext, AppGroup
 from datetime import datetime, timedelta
 
 from App.database import db, get_migrate
-from App.models import User, Admin, Driver, Resident, Drive, Stop, Area, Street
+from App.models import User, Admin, Driver, Resident, Drive, Stop, Area, Street, Subject, Observer
 from App.main import create_app
 from App.controllers import (get_user, get_all_users_json, get_all_users,
                              get_user_by_username, initialize)

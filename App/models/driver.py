@@ -4,6 +4,8 @@ from .user import User
 from .drive import Drive
 from .street import Street
 
+from App.models.notification_service import notification_service
+
 
 class Driver(User):
     __tablename__ = "driver"
@@ -65,29 +67,43 @@ class Driver(User):
                           status="Upcoming")
         db.session.add(new_drive)
         db.session.commit()
-
-        street = Street.query.get(streetId)
-        if street:
-            for resident in street.residents:
-                resident.receive_notif(
-                    f"SCHEDULED>> Drive {new_drive.id} by Driver {self.id} on {date} at {time}"
-                )
-            db.session.commit()
-        return (new_drive)
+        
+        notification_data = {
+            "drive_id": new_drive.id,
+            "driver_id": self.id,
+            "date": date_str,
+            "time": time_str,
+            "type": "drive_scheduled"
+        }
+        
+        notification_service.notify(
+            str(streetId),
+            f"Bread van scheduled for {date_str} at {time_str}",
+            notification_data
+        )
+        
+        return new_drive
 
     def cancel_drive(self, driveId):
         drive = Drive.query.get(driveId)
         if drive:
             drive.status = "Cancelled"
             db.session.commit()
-
-            street = Street.query.get(self.streetId)
-            if street:
-                for resident in street.residents:
-                    resident.receive_notif(
-                        f"CANCELLED: Drive {drive.id} by {self.id} on {drive.date} at {drive.time}"
-                    )
-                db.session.commit()
+            
+            # Use Observer Pattern for cancellation notifications
+            notification_data = {
+                "drive_id": drive.id,
+                "driver_id": self.id,
+                "date": str(drive.date),
+                "time": str(drive.time),
+                "type": "drive_cancelled"
+            }
+            
+            notification_service.notify(
+                str(drive.streetId),
+                f"Drive cancelled for {drive.date} at {drive.time}",
+                notification_data
+            )
         return None
 
     def view_drives(self):

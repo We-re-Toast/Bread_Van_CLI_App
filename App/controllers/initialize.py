@@ -1,6 +1,8 @@
 from App.database import db
 from App.models import Admin, Driver, Resident, Area, Street
 
+from App.models.notification_service import notification_service
+
 
 def initialize():
     db.drop_all()
