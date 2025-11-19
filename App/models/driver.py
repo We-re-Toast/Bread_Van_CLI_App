@@ -7,7 +7,7 @@ from App.models.subject import Subject
 
 
 
-class Driver(User, Subject):
+class Driver(User):
     __tablename__ = "driver"
 
     id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
@@ -24,7 +24,7 @@ class Driver(User, Subject):
 
     def __init__(self, username, password, status, areaId, streetId):
         super().__init__(username, password)
-        Subject.__init__(self)  # Initialize _observers
+        self.subject = Subject()       # Compose Subject inside Driver
         self.status = status
         self.areaId = areaId
         self.streetId = streetId
@@ -55,7 +55,7 @@ class Driver(User, Subject):
             date = datetime.strptime(date_str, "%Y-%m-%d").date()
             time = datetime.strptime(time_str, "%H:%M").time()
         except Exception:
-            print("Invalid date or time format. Please use YYYY-MM-DD for date and HH:MM.")
+            print("Invalid date or time format.")
             return
 
         new_drive = Drive(
@@ -72,9 +72,9 @@ class Driver(User, Subject):
         street = Street.query.get(streetId)
         if street:
             for resident in street.residents:
-                self.add_observer(resident)  # add resident as observer
+                self.subject.add_observer(resident)
 
-        self.notify_observers(
+        self.subject.notify_observers(
             f"SCHEDULED>> Drive {new_drive.id} by Driver {self.id} on {date} at {time}"
         )
 
@@ -86,12 +86,14 @@ class Driver(User, Subject):
             drive.status = "Cancelled"
             db.session.commit()
 
-            street = Street.query.get(self.streetId)
+            # Notify residents on the drive's street about the cancellation.
+            street = Street.query.get(drive.streetId or self.streetId)
             if street:
                 for resident in street.residents:
-                    self.add_observer(resident)
+                    # ensure resident is registered as observer before notifying
+                    self.subject.add_observer(resident)
 
-            self.notify_observers(
+            self.subject.notify_observers(
                 f"CANCELLED: Drive {drive.id} by Driver {self.id} on {drive.date} at {drive.time}"
             )
 

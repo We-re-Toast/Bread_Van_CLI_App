@@ -1,6 +1,4 @@
-from abc import ABC
-
-class Subject(ABC):
+class Subject:
     def __init__(self):
         self._observers = []
     
