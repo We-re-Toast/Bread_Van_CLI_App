@@ -3,9 +3,12 @@ from datetime import datetime
 from .user import User
 from .drive import Drive
 from .street import Street
+from typing import List
+from .observer import Observer
+from .subject import Subject
 
 
-class Driver(User):
+class Driver(User, Subject):
     __tablename__ = "driver"
 
     id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
@@ -25,6 +28,19 @@ class Driver(User):
         self.status = status
         self.areaId = areaId
         self.streetId = streetId
+        self._observers: List[Observer] = []
+
+    def attach(self, observer: "Observer") -> None:
+        if observer not in self._observers:
+            self._observers.append(observer)
+
+    def detach(self, observer: "Observer") -> None:
+        if observer in self._observers:
+            self._observers.remove(observer)
+    
+    def notify(self, message: str) -> None:
+        for observer in self._observers:
+            observer.update(self, message)
 
     def get_json(self):
         user_json = super().get_json()
