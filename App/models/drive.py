@@ -8,17 +8,21 @@ class Drive(db.Model):
     date = db.Column(db.Date, nullable=False)
     time = db.Column(db.Time, nullable=False)
     status = db.Column(db.String(20), nullable=False)
+    menu = db.Column(db.String(200), nullable=True)
+    eta = db.Column(db.Time, nullable=True)
 
     area = db.relationship("Area", backref="drives")
     street = db.relationship("Street", backref="drives")
 
-    def __init__(self, driverId, areaId, streetId, date, time, status):
+    def __init__(self, driverId, areaId, streetId, date, time, status, menu=None, eta=None):
         self.driverId = driverId
         self.areaId = areaId
         self.streetId = streetId
         self.date = date
         self.time = time
         self.status = status
+        self.menu = menu
+        self.eta = eta
 
     def get_json(self):
         return {
@@ -28,5 +32,7 @@ class Drive(db.Model):
             'streetId': self.streetId,
             'date': self.date,
             'time': self.time,
-            'status': self.status
+            'status': self.status,
+            'menu': self.menu,
+            'eta': self.eta
         }

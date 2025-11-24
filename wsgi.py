@@ -102,16 +102,16 @@ def view_street_drives_command():
         f"\nAll Scheduled Drives on {drives[0].street.name}, {drives[0].area.name}:"
     )
     print("-" * 70)
-    print(f"{'Drive ID':<10} {'Date':<12} {'Time':<8} {'Driver':<20}")
+    print(f"{'Drive ID':<10} {'Date':<12} {'Time':<8} {'Driver':<20} {'Menu':<30}")
     print("-" * 70)
     for drive in drives:
         date_str = drive.date.strftime("%Y-%m-%d")
         time_str = drive.time.strftime("%H:%M")
+        menu_preview = drive.menu[:27] + "..." if drive.menu and len(drive.menu) > 30 else drive.menu
         print(
-            f"{drive.id:<10} {date_str:<12} {time_str:<8} {drive.driverId:<20}"
+            f"{drive.id:<10} {date_str:<12} {time_str:<8} {drive.driverId:<20} {menu_preview or 'No menu':<30}"
         )
     print("\n")
-
 
 app.cli.add_command(user_cli)
 
@@ -344,8 +344,8 @@ def schedule_drive_command(date_str, time_str):
     chosen_street = streets[chosen_index - 1]
 
     existing_drive = Drive.query.filter_by(areaId=chosen_area.id,
-                                          streetId=chosen_street.id,
-                                          date=date).first()
+                                        streetId=chosen_street.id,
+                                        date=date).first()
 
     if existing_drive:
         confirm = input(f"A driver (ID {existing_drive.driverId}) already has a drive scheduled for this area/street on {date_str}. Confirm scheduling? (y/n): ")
@@ -353,10 +353,56 @@ def schedule_drive_command(date_str, time_str):
             print("Drive scheduling cancelled.")
             return
 
-    driver.schedule_drive(chosen_area.id, chosen_street.id, date_str, time_str)
+    # Get menu and ETA from driver
+    menu = click.prompt("Enter menu items (optional)", default="", show_default=False)
+    eta = click.prompt("Enter ETA (optional, e.g., '10:00 AM')", default="", show_default=False)
+
+    # Use empty string if user just presses enter
+    menu = menu if menu else None
+    eta = eta if eta else None
+
+    driver.schedule_drive(chosen_area.id, chosen_street.id, date_str, time_str, menu, eta)
+    menu_text = f" with menu: {menu}" if menu else ""
+    eta_text = f" (ETA: {eta})" if eta else ""
     print(
-        f"\nDrive scheduled for {date} at {time} on {chosen_street.name}, {chosen_area.name}"
+        f"\nDrive scheduled for {date} at {time}{eta_text} on {chosen_street.name}, {chosen_area.name}{menu_text}"
     )
+
+@driver_cli.command("update_menu", help="Update menu for a drive")
+@click.argument("drive_id", type=int)
+def update_menu_command(drive_id):
+    driver = require_driver()
+    if not driver:
+        return
+    
+    drive = Drive.query.get(drive_id)
+    if not drive or drive.driverId != driver.id:
+        print("Drive not found or you don't have permission to update this drive.")
+        return
+
+    new_menu = click.prompt("Enter new menu items", default=drive.menu or "", show_default=False)
+    if driver.update_drive_menu(drive_id, new_menu):
+        print(f"Menu updated for drive {drive_id}")
+    else:
+        print("Failed to update menu")
+
+@driver_cli.command("update_eta", help="Update ETA for a drive")
+@click.argument("drive_id", type=int)
+def update_eta_command(drive_id):
+    driver = require_driver()
+    if not driver:
+        return
+    
+    drive = Drive.query.get(drive_id)
+    if not drive or drive.driverId != driver.id:
+        print("Drive not found or you don't have permission to update this drive.")
+        return
+
+    new_eta = click.prompt("Enter new ETA", default=drive.eta or "", show_default=False)
+    if driver.update_drive_eta(drive_id, new_eta):
+        print(f"ETA updated for drive {drive_id}")
+    else:
+        print("Failed to update ETA")
 
 
 @driver_cli.command("cancel_drive", help="Cancel a drive")
@@ -385,16 +431,17 @@ def view_drives_command():
         return
 
     print("\nYour Scheduled Drives:")
-    print("-" * 70)
+    print("-" * 90)
     print(
-        f"{'Drive ID':<10} {'Date':<12} {'Time':<8} {'Area':<20} {'Street':<20}"
+        f"{'Drive ID':<10} {'Date':<12} {'Time':<8} {'Area':<20} {'Street':<20} {'Menu':<30}"
     )
-    print("-" * 70)
+    print("-" * 90)
     for drive in drives:
         date_str = drive.date.strftime("%Y-%m-%d")
         time_str = drive.time.strftime("%H:%M")
+        menu_preview = drive.menu[:27] + "..." if drive.menu and len(drive.menu) > 30 else drive.menu
         print(
-            f"{drive.id:<10} {date_str:<12} {time_str:<8} {drive.area.name:<20} {drive.street.name:<20}"
+            f"{drive.id:<10} {date_str:<12} {time_str:<8} {drive.area.name:<20} {drive.street.name:<20} {menu_preview or 'No menu':<30}"
         )
     print("\n")
 
@@ -406,15 +453,15 @@ def start_drive_command(drive_id):
     if not driver:
         return
 
-    current_drive = Drive.query.filter_by(driverId=driver.id,
-                                          status="In Progress").first()
+    current_drive = Drive.query.filter_by(driverId=driver.id, status="In Progress").first()
+    
     if current_drive:
         print(f"You are already on drive {current_drive.id}.")
         return
 
     drive = Drive.query.filter_by(driverId=driver.id,
-                                  id=drive_id,
-                                  status="Upcoming").first()
+                                id=drive_id,
+                                status="Upcoming").first()
     if not drive:
         print("Drive not found or cannot be started.")
         return
@@ -529,33 +576,37 @@ def request_stop_command():
         return
 
     drives = Drive.query.filter_by(areaId=resident.areaId,
-                                   streetId=resident.streetId,
-                                   status="Upcoming").all()
+                                streetId=resident.streetId,
+                                status="Upcoming").all()
 
     if not drives:
         print("No scheduled drives to your street.")
         return
 
     print("\nScheduled Drives to your Street:")
-    print("-" * 50)
-    print(f"{'Drive ID':<10} {'Date':<12} {'Time':<8} {'Driver ID':<10}")
-    print("-" * 50)
+    print("-" * 80)
+    print(f"{'Drive ID':<10} {'Date':<12} {'Time':<8} {'Driver ID':<10} {'Menu':<30}")
+    print("-" * 80)
     for drive in drives:
         date_str = drive.date.strftime("%Y-%m-%d")
         time_str = drive.time.strftime("%H:%M")
+        menu_preview = drive.menu[:27] + "..." if drive.menu and len(drive.menu) > 30 else drive.menu
         print(
-            f"{drive.id:<10} {date_str:<12} {time_str:<8} {drive.driverId:<20}"
+            f"{drive.id:<10} {date_str:<12} {time_str:<8} {drive.driverId:<20} {menu_preview or 'No menu':<30}"
         )
     print("\n")
 
     chosen_drive = click.prompt("Select a drive by ID to request a stop",
                                 type=int)
-    if chosen_drive < 1 or chosen_drive > len(drives):
+
+    # Validate drive ID
+    chosen_drive_obj = next((d for d in drives if d.id == chosen_drive), None)
+    if not chosen_drive_obj:
         print("Invalid drive choice.")
         return
 
     existing_stop = Stop.query.filter_by(driveId=chosen_drive,
-                                         residentId=resident.id).first()
+                                        residentId=resident.id).first()
 
     if existing_stop:
         print(f"You have already requested a stop for drive {chosen_drive}.")
@@ -598,6 +649,45 @@ def view_inbox_command():
             print(notif)
     else:
         print("Your inbox is empty.")
+
+@resident_cli.command("view_notification_history",
+                        help="View detailed notification history")
+def view_notification_history_command():
+    resident = require_resident()
+    if not resident:
+        return
+
+    history = resident.view_notification_history()
+    print("\nNotification History:")
+    print("=" * 50)
+    print(history)
+
+
+@resident_cli.command("view_drive_details",
+help="View detailed information about a drive including menu")
+@click.argument("drive_id", type=int)
+def view_drive_details_command(drive_id):
+    resident = require_resident()
+    if not resident:
+        return
+    
+    details = resident.view_drive_details(drive_id)
+    if not details:
+        print("Drive not found.")
+        return
+
+    print(f"\nDrive Details for ID {drive_id}:")
+    print("=" * 40)
+    print(f"Date: {details['date']}")
+    print(f"Time: {details['time']}")
+    print(f"Driver ID: {details['driver_id']}")
+    print(f"Status: {details['status']}")
+    if details['eta']:
+        print(f"ETA: {details['eta']}")
+    if details['menu']:
+        print(f"Menu: {details['menu']}")
+    else:
+        print("Menu: No menu specified")
 
 
 @resident_cli.command("view_driver_stats",

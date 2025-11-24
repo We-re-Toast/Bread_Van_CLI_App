@@ -77,6 +77,15 @@ class Resident(User):
             new_stop = Stop(driveId=driveId, residentId=self.id)
             db.session.add(new_stop)
             db.session.commit()
+            
+            # Get drive details for confirmation
+            drive = Drive.query.get(driveId)
+            if drive and drive.menu:
+                self.receive_notif(
+                    f"Stop requested for drive on {drive.date}. Menu: {drive.menu}",
+                    {"drive_id": driveId, "type": "stop_requested", "menu": drive.menu}
+                )
+            
             return (new_stop)
         except Exception:
             db.session.rollback()
@@ -92,6 +101,39 @@ class Resident(User):
     def view_inbox(self):
         return self.inbox
 
+    def view_notification_history(self):
+        """View all notifications with details"""
+        if not self.inbox:
+            return "No notifications found."
+        
+        history = []
+        for i, notif in enumerate(reversed(self.inbox), 1):
+            history.append(f"{i}. [{notif['timestamp']}] {notif['message']}")
+            if notif['data'].get('menu'):
+                history.append(f"   Menu: {notif['data']['menu']}")
+            if notif['data'].get('eta'):
+                history.append(f"   ETA: {notif['data']['eta']}")
+        
+        return "\n".join(history)
+
     def view_driver_stats(self, driverId):
         driver = Driver.query.get(driverId)
         return driver
+
+    def view_drive_details(self, driveId):
+        """View detailed information about a specific drive including menu"""
+        drive = Drive.query.get(driveId)
+        if not drive:
+            return None
+        
+        details = {
+            'id': drive.id,
+            'date': drive.date,
+            'time': drive.time,
+            'driver_id': drive.driverId,
+            'status': drive.status,
+            'menu': drive.menu,
+            'eta': drive.eta
+        }
+        
+        return details
