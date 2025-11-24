@@ -6,7 +6,6 @@ from .street import Street
 
 from App.models.notification_service import notification_service
 
-
 class Driver(User):
     __tablename__ = "driver"
 
@@ -49,7 +48,7 @@ class Driver(User):
         self.status = "Offline"
         db.session.commit()
 
-    def schedule_drive(self, areaId, streetId, date_str, time_str):
+    def schedule_drive(self, areaId, streetId, date_str, time_str, menu=None, eta=None):
         try:
             date = datetime.strptime(date_str, "%Y-%m-%d").date()
             time = datetime.strptime(time_str, "%H:%M").time()
@@ -60,25 +59,33 @@ class Driver(User):
             return
 
         new_drive = Drive(driverId=self.id,
-                          areaId=areaId,
-                          streetId=streetId,
-                          date=date,
-                          time=time,
-                          status="Upcoming")
+                        areaId=areaId,
+                        streetId=streetId,
+                        date=date,
+                        time=time,
+                        status="Upcoming",
+                        menu=menu,
+                        eta=eta)
         db.session.add(new_drive)
         db.session.commit()
+        
+        # Enhanced notification with menu and ETA
+        menu_text = f"Menu: {menu}" if menu else "No menu specified"
+        eta_text = f"ETA: {eta}" if eta else f"at {time_str}"
         
         notification_data = {
             "drive_id": new_drive.id,
             "driver_id": self.id,
             "date": date_str,
             "time": time_str,
+            "menu": menu,
+            "eta": eta,
             "type": "drive_scheduled"
         }
         
         notification_service.notify(
             str(streetId),
-            f"Bread van scheduled for {date_str} at {time_str}",
+            f"Bread van scheduled for {date_str} {eta_text}. {menu_text}",
             notification_data
         )
         
@@ -90,7 +97,6 @@ class Driver(User):
             drive.status = "Cancelled"
             db.session.commit()
             
-            # Use Observer Pattern for cancellation notifications
             notification_data = {
                 "drive_id": drive.id,
                 "driver_id": self.id,
@@ -134,4 +140,52 @@ class Driver(User):
         drive = Drive.query.get(driveId)
         if drive:
             return drive.stops
+        return None
+
+    def update_drive_menu(self, driveId, menu):
+        drive = Drive.query.get(driveId)
+        if drive and drive.driverId == self.id:
+            drive.menu = menu
+            db.session.commit()
+            
+            # Notify residents about menu update
+            notification_data = {
+                "drive_id": drive.id,
+                "driver_id": self.id,
+                "date": str(drive.date),
+                "time": str(drive.time),
+                "menu": menu,
+                "type": "menu_updated"
+            }
+            
+            notification_service.notify(
+                str(drive.streetId),
+                f"Menu updated for drive on {drive.date}: {menu}",
+                notification_data
+            )
+            return drive
+        return None
+
+    def update_drive_eta(self, driveId, eta):
+        drive = Drive.query.get(driveId)
+        if drive and drive.driverId == self.id:
+            drive.eta = eta
+            db.session.commit()
+            
+            # Notify residents about ETA update
+            notification_data = {
+                "drive_id": drive.id,
+                "driver_id": self.id,
+                "date": str(drive.date),
+                "time": str(drive.time),
+                "eta": eta,
+                "type": "eta_updated"
+            }
+            
+            notification_service.notify(
+                str(drive.streetId),
+                f"ETA updated for drive on {drive.date}: {eta}",
+                notification_data
+            )
+            return drive
         return None
