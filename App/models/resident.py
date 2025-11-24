@@ -42,6 +42,22 @@ class Resident(User):
         user_json['houseNumber'] = self.houseNumber
         user_json['inbox'] = self.inbox
         return user_json
+    
+    def update(self, message):
+        """Observer interface implementation"""
+        self.receive_notif(message)
+
+    def receive_notif(self, message):
+        if self.inbox is None:
+            self.inbox = []
+        if len(self.inbox) >= MAX_INBOX_SIZE:
+            self.inbox.pop(0)
+
+        timestamp = datetime.now().strftime("%Y:%m:%d:%H:%M:%S")
+        notif = f"[{timestamp}]: {message}"
+        self.inbox.append(notif)
+        db.session.add(self)
+        db.session.commit()
 
     def request_stop(self, driveId):
         try:

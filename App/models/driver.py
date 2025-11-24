@@ -3,6 +3,7 @@ from datetime import datetime
 from .user import User
 from .drive import Drive
 from .street import Street
+from .driver_stock import DriverStock
 
 
 class Driver(User):
@@ -48,32 +49,32 @@ class Driver(User):
         db.session.commit()
 
     def schedule_drive(self, areaId, streetId, date_str, time_str):
-        try:
-            date = datetime.strptime(date_str, "%Y-%m-%d").date()
-            time = datetime.strptime(time_str, "%H:%M").time()
-        except Exception:
-            print(
-                "Invalid date or time format. Please use YYYY-MM-DD for date and HH:MM for time."
-            )
-            return
+        date = datetime.strptime(date_str, "%Y-%m-%d").date()
+        time = datetime.strptime(time_str, "%H:%M").time()
 
         new_drive = Drive(driverId=self.id,
-                          areaId=areaId,
-                          streetId=streetId,
-                          date=date,
-                          time=time,
-                          status="Upcoming")
+                        areaId=areaId,
+                        streetId=streetId,
+                        date=date,
+                        time=time,
+                        status="Upcoming")
         db.session.add(new_drive)
         db.session.commit()
 
         street = Street.query.get(streetId)
         if street:
+            # Attach residents as observers
             for resident in street.residents:
-                resident.receive_notif(
-                    f"SCHEDULED>> Drive {new_drive.id} by Driver {self.id} on {date} at {time}"
-                )
-            db.session.commit()
-        return (new_drive)
+                street.attach(resident)
+
+            # Collect menu from DriverStock
+            menu_items = DriverStock.query.filter_by(driverId=self.id).all()
+            eta = f"{date} {time}"
+
+            street.notify_drive_scheduled(new_drive, self, menu_items, eta)
+
+        return new_drive
+
 
     def cancel_drive(self, driveId):
         drive = Drive.query.get(driveId)
