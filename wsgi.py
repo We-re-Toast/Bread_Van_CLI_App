@@ -13,10 +13,6 @@ from App.controllers import (get_user, get_all_users_json, get_all_users,
 from App.controllers.admin import (
     admin_create_driver,
     admin_delete_driver,
-    admin_add_area,
-    admin_add_street,
-    admin_delete_area,
-    admin_delete_street,
     admin_view_all_areas,
     admin_view_all_streets
 )
@@ -206,58 +202,6 @@ def delete_driver_command(driver_id):
         print(f"Driver {driver.username} deleted.")
     except ValueError as e:
         print(str(e))
-
-
-@admin_cli.command("add_area", help="Add a new area")
-@click.argument("name")
-def add_area_command(name):
-    admin = require_admin()
-    if not admin:
-        return
-    area = admin_add_area(name)
-    print(f"Area '{area.name}' added.")
-
-
-@admin_cli.command("add_street", help="Add a new street to an area")
-@click.argument("area_id", type=int)
-@click.argument("name")
-def add_street_command(area_id, name):
-    admin = require_admin()
-    if not admin:
-        return
-    try:
-        street = admin_add_street(area_id, name)
-        area = Area.query.get(area_id)
-        print(f"Street '{street.name}' added to area '{area.name}'.")
-    except ValueError as e:
-        print(str(e))
-
-
-@admin_cli.command("delete_area", help="Delete an area")
-@click.argument("area_id", type=int)
-def delete_area_command(area_id):
-    admin = require_admin()
-    if not admin:
-        return
-    try:
-        area = admin_delete_area(area_id)
-        print(f"Area '{area.name}' deleted.")
-    except ValueError as e:
-        print(str(e))
-
-
-@admin_cli.command("delete_street", help="Delete a street")
-@click.argument("street_id", type=int)
-def delete_street_command(street_id):
-    admin = require_admin()
-    if not admin:
-        return
-    try:
-        street = admin_delete_street(street_id)
-        print(f"Street '{street.name}' deleted.")
-    except ValueError as e:
-        print(str(e))
-
 
 @admin_cli.command("view_all_areas", help="View all areas")
 def view_all_areas_command():
