@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
 
-class Observer(ABC):
-    @abstractmethod
+class Observer:
     def update(self, message):
         """Receive notification from subject"""
-        pass
+        raise NotImplementedError("Observer must implement update()")
 
-class Subject(ABC):
+
+class SubjectMixin:
     def __init__(self):
         self._observers = []
 
@@ -23,3 +23,4 @@ class Subject(ABC):
     def notify(self, message):
         for observer in self._observers:
             observer.update(message)
+
