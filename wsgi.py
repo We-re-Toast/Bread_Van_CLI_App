@@ -158,8 +158,8 @@ app.cli.add_command(user_cli)
 
 # Admin Commands
 ##################################################################################
-admin_cli = AppGroup('admin',
-                     help='Admin commands for managing areas and streets')
+admin_cli = AppGroup('admin', help='Admin commands for managing areas, streets, and drivers')
+
 @admin_cli.command("list", help="Lists users in the database")
 @click.argument("format", default="string")
 def list_user_command(format):
@@ -168,7 +168,7 @@ def list_user_command(format):
         return
 
     users = get_all_users()
-    if users is None:
+    if not users:
         print("No users found.")
         return
 
@@ -190,9 +190,9 @@ def create_driver_command(username, password):
         return
     try:
         driver = admin_create_driver(username, password)
-        print(f"Driver {driver.username} created!")
+        print(f"Driver '{driver.username}' created!")
     except ValueError as e:
-        print(str(e))
+        print(f"⚠ {str(e)}")
 
 
 @admin_cli.command("delete_driver", help="Deletes a driver")
@@ -203,9 +203,9 @@ def delete_driver_command(driver_id):
         return
     try:
         driver = admin_delete_driver(driver_id)
-        print(f"Driver {driver.username} deleted.")
+        print(f"Driver '{driver.username}' deleted.")
     except ValueError as e:
-        print(str(e))
+        print(f"⚠ {str(e)}")
 
 
 @admin_cli.command("add_area", help="Add a new area")
@@ -230,7 +230,7 @@ def add_street_command(area_id, name):
         area = Area.query.get(area_id)
         print(f"Street '{street.name}' added to area '{area.name}'.")
     except ValueError as e:
-        print(str(e))
+        print(f"⚠ {str(e)}")
 
 
 @admin_cli.command("delete_area", help="Delete an area")
@@ -243,20 +243,21 @@ def delete_area_command(area_id):
         area = admin_delete_area(area_id)
         print(f"Area '{area.name}' deleted.")
     except ValueError as e:
-        print(str(e))
+        print(f"⚠ {str(e)}")
 
 
 @admin_cli.command("delete_street", help="Delete a street")
 @click.argument("street_id", type=int)
-def delete_street_command(street_id):
+@click.argument("area_id", type=int)
+def delete_street_command(area_id, street_id):
     admin = require_admin()
     if not admin:
         return
     try:
-        street = admin_delete_street(street_id)
+        street = admin_delete_street(area_id, street_id)
         print(f"Street '{street.name}' deleted.")
     except ValueError as e:
-        print(str(e))
+        print(f"⚠ {str(e)}")
 
 
 @admin_cli.command("view_all_areas", help="View all areas")
@@ -291,7 +292,8 @@ def view_all_streets_command():
 
 app.cli.add_command(admin_cli)
 
-### ---------------- DRIVER COMMANDS ---------------- ###
+# Driver Commands
+##################################################################################
 
 @app.cli.command("driver-schedule-drive")
 @click.argument("driver_id")
@@ -300,8 +302,6 @@ app.cli.add_command(admin_cli)
 @click.argument("date")
 @click.argument("time")
 def driver_schedule_cmd(driver_id, area_id, street_id, date, time):
-    """Schedule a drive and notify residents."""
-    from App.controllers.driver import driver_schedule_drive
     driver = Driver.query.get(driver_id)
     if not driver:
         print("Driver not found.")
@@ -310,35 +310,33 @@ def driver_schedule_cmd(driver_id, area_id, street_id, date, time):
     try:
         new_drive = driver_schedule_drive(driver, area_id, street_id, date, time)
         print(f"✔ Drive {new_drive.id} scheduled successfully.")
-
-    except Exception as e:
-        print(f"⚠ Error: {str(e)}")
+    except ValueError as e:
+        print(f"⚠ {str(e)}")
 
 
 @app.cli.command("driver-cancel-drive")
 @click.argument("driver_id")
 @click.argument("drive_id")
 def driver_cancel_cmd(driver_id, drive_id):
-    """Cancel a drive and notify residents."""
-    from App.controllers.driver import driver_cancel_drive
     driver = Driver.query.get(driver_id)
     if not driver:
         print("Driver not found.")
         return
 
-    cancelled = driver_cancel_drive(driver, drive_id)
-    if cancelled:
-        print("✔ Drive cancelled and residents notified.")
-    else:
-        print("⚠ Unable to cancel drive.")
+    try:
+        cancelled = driver_cancel_drive(driver, drive_id)
+        if cancelled:
+            print("✔ Drive cancelled and residents notified.")
+        else:
+            print("⚠ Unable to cancel drive.")
+    except ValueError as e:
+        print(f"⚠ {str(e)}")
 
 
 @app.cli.command("driver-start-drive")
 @click.argument("driver_id")
 @click.argument("drive_id")
 def driver_start_cmd(driver_id, drive_id):
-    """Start a scheduled drive."""
-    from App.controllers.driver import driver_start_drive
     driver = Driver.query.get(driver_id)
     if not driver:
         print("Driver not found.")
@@ -347,15 +345,13 @@ def driver_start_cmd(driver_id, drive_id):
     try:
         drive = driver_start_drive(driver, drive_id)
         print(f"🚚 Drive {drive.id} started successfully.")
-    except Exception as e:
-        print(f"⚠ Error: {str(e)}")
+    except ValueError as e:
+        print(f"⚠ {str(e)}")
 
 
 @app.cli.command("driver-end-drive")
 @click.argument("driver_id")
 def driver_end_cmd(driver_id):
-    """End the current in-progress drive."""
-    from App.controllers.driver import driver_end_drive
     driver = Driver.query.get(driver_id)
     if not driver:
         print("Driver not found.")
@@ -364,15 +360,13 @@ def driver_end_cmd(driver_id):
     try:
         drive = driver_end_drive(driver)
         print(f"🏁 Drive {drive.id} ended successfully.")
-    except Exception as e:
-        print(f"⚠ Error: {str(e)}")
+    except ValueError as e:
+        print(f"⚠ {str(e)}")
 
 
 @app.cli.command("driver-view-drives")
 @click.argument("driver_id")
 def driver_view_drives_cmd(driver_id):
-    """View all upcoming and in-progress drives."""
-    from App.controllers.driver import driver_view_drives
     driver = Driver.query.get(driver_id)
     if not driver:
         print("Driver not found.")
@@ -391,8 +385,6 @@ def driver_view_drives_cmd(driver_id):
 @click.argument("driver_id")
 @click.argument("drive_id")
 def driver_view_stops_cmd(driver_id, drive_id):
-    """View all requested stops for a drive."""
-    from App.controllers.driver import driver_view_requested_stops
     driver = Driver.query.get(driver_id)
     if not driver:
         print("Driver not found.")
@@ -405,7 +397,6 @@ def driver_view_stops_cmd(driver_id, drive_id):
 
     for stop in stops:
         print(f"• Resident {stop.residentId} requested stop at {stop.timestamp}")
-        
 
 # Resident Commands
 ##################################################################################
