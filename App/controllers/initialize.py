@@ -53,23 +53,20 @@ def initialize():
     resident1 = Resident(username="alice",
                          password="alicepass",
                          areaId=area1.id,
-                         streetId=street12.id,
                          houseNumber=48)
     resident2 = Resident(username="jane",
                          password="janepass",
                          areaId=area1.id,
-                         streetId=street12.id,
                          houseNumber=50)
     resident3 = Resident(username="john",
                          password="johnpass",
                          areaId=area2.id,
-                         streetId=street21.id,
                          houseNumber=13)
     db.session.add_all([resident1, resident2, resident3])
     db.session.commit()
 
     #Creating Drives and Stops
-    driver2.schedule_drive(area1.id, street12.id, "2025-10-26", "10:00")
+    driver2.schedule_drive(area1.id, street12.id, "2025-10-26", "10:00", menu_id=None)
     db.session.commit()
                      
     resident2.request_stop(0)

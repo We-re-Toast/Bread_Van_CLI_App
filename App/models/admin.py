@@ -1,8 +1,10 @@
+from datetime import datetime
 from App.database import db
 from .user import User
 from .driver import Driver
 from .area import Area
 from .street import Street
+from .drive import Drive
 
 class Admin(User):
     __tablename__ = "admin"
@@ -71,5 +73,32 @@ class Admin(User):
     def view_all_streets(self):
         return Street.query.all()
         
+    # schedule_drive(driver_id, street_id, date_str, time_str, menu_id)
+    def schedule_drive(self, driver_ID, areaId, streetId, date_str, time_str, menu_id):
+        try:
+            date = datetime.strptime(date_str, "%Y-%m-%d").date()
+            time = datetime.strptime(time_str, "%H:%M").time()
+        except Exception:
+            print(
+                "Invalid date or time format. Please use YYYY-MM-DD for date and HH:MM for time."
+            )
+            return
 
-  
+        new_drive = Drive(driverId=driver_ID,
+                          areaId=areaId,
+                          streetId=streetId,
+                          date=date,
+                          time=time,
+                          menu_id = menu_id,
+                          status="Upcoming")
+        db.session.add(new_drive)
+        db.session.commit()
+
+        street = Street.query.get(streetId)
+        if street:
+            for resident in street.residents:
+                resident.receive_notif(
+                    f"SCHEDULED>> Drive {new_drive.id} by Driver {self.id} on {date} at {time}"
+                )
+            db.session.commit()
+        return (new_drive)
