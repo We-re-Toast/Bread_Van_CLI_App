@@ -295,7 +295,10 @@ app.cli.add_command(admin_cli)
 # Driver Commands
 ##################################################################################
 
-@app.cli.command("driver-schedule-drive")
+driver_cli = AppGroup('driver', help='Driver-related commands')
+
+
+@driver_cli.command("schedule", help="Driver schedules a drive")
 @click.argument("driver_id")
 @click.argument("area_id")
 @click.argument("street_id")
@@ -314,7 +317,7 @@ def driver_schedule_cmd(driver_id, area_id, street_id, date, time):
         print(f"⚠ {str(e)}")
 
 
-@app.cli.command("driver-cancel-drive")
+@driver_cli.command("cancel", help="Driver cancels a scheduled drive")
 @click.argument("driver_id")
 @click.argument("drive_id")
 def driver_cancel_cmd(driver_id, drive_id):
@@ -333,7 +336,7 @@ def driver_cancel_cmd(driver_id, drive_id):
         print(f"⚠ {str(e)}")
 
 
-@app.cli.command("driver-start-drive")
+@driver_cli.command("start", help="Driver starts a drive")
 @click.argument("driver_id")
 @click.argument("drive_id")
 def driver_start_cmd(driver_id, drive_id):
@@ -349,7 +352,7 @@ def driver_start_cmd(driver_id, drive_id):
         print(f"⚠ {str(e)}")
 
 
-@app.cli.command("driver-end-drive")
+@driver_cli.command("end", help="Driver ends their current drive")
 @click.argument("driver_id")
 def driver_end_cmd(driver_id):
     driver = Driver.query.get(driver_id)
@@ -364,7 +367,7 @@ def driver_end_cmd(driver_id):
         print(f"⚠ {str(e)}")
 
 
-@app.cli.command("driver-view-drives")
+@driver_cli.command("view-drives", help="View all drives for a driver")
 @click.argument("driver_id")
 def driver_view_drives_cmd(driver_id):
     driver = Driver.query.get(driver_id)
@@ -381,7 +384,7 @@ def driver_view_drives_cmd(driver_id):
         print(f"- Drive {d.id} on {d.date} at {d.time} [{d.status}]")
 
 
-@app.cli.command("driver-view-stops")
+@driver_cli.command("view-stops", help="View requested stops for a drive")
 @click.argument("driver_id")
 @click.argument("drive_id")
 def driver_view_stops_cmd(driver_id, drive_id):
@@ -397,6 +400,10 @@ def driver_view_stops_cmd(driver_id, drive_id):
 
     for stop in stops:
         print(f"• Resident {stop.residentId} requested stop at {stop.timestamp}")
+
+
+# Register driver command group
+app.cli.add_command(driver_cli)
 
 # Resident Commands
 ##################################################################################

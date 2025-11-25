@@ -1,5 +1,7 @@
 from App.models import Admin, Driver, Area, Street, Item
 from App.database import db
+from App.models.resident import Resident
+from App.models.subject import Subject
 
 # All admin-related business logic will be moved here as functions
 
@@ -73,3 +75,43 @@ def admin_view_all_streets():
 
 def admin_view_all_items():
      return Item.query.all()
+
+def admin_add_resident_to_subject(subject_id, resident_id):
+    subject = Subject.query.get(subject_id)
+    if not subject:
+        raise ValueError("Invalid subject ID.")
+
+    resident = Resident.query.get(resident_id)
+    if not resident:
+        raise ValueError("Invalid resident ID.")
+
+    if resident in subject.residents:
+        raise ValueError("Resident already assigned to this subject.")
+
+    subject.residents.append(resident)
+    db.session.commit()
+    return subject
+
+
+def admin_remove_resident_from_subject(subject_id, resident_id):
+    subject = Subject.query.get(subject_id)
+    if not subject:
+        raise ValueError("Invalid subject ID.")
+
+    resident = Resident.query.get(resident_id)
+    if not resident:
+        raise ValueError("Invalid resident ID.")
+
+    if resident not in subject.residents:
+        raise ValueError("Resident is not assigned to this subject.")
+
+    subject.residents.remove(resident)
+    db.session.commit()
+    return subject
+
+
+def admin_view_subject_residents(subject_id):
+    subject = Subject.query.get(subject_id)
+    if not subject:
+        raise ValueError("Invalid subject ID.")
+    return subject.residents
