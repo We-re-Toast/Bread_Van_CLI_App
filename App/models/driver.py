@@ -48,32 +48,37 @@ class Driver(User):
         self.status = "Offline"
         db.session.commit()
 
-    def schedule_drive(self, areaId, streetId, date_str, time_str):
-        date = datetime.strptime(date_str, "%Y-%m-%d").date()
-        time = datetime.strptime(time_str, "%H:%M").time()
+def schedule_drive(self, areaId, streetId, date_str, time_str):
+    date = datetime.strptime(date_str, "%Y-%m-%d").date()
+    time = datetime.strptime(time_str, "%H:%M").time()
 
-        new_drive = Drive(driverId=self.id,
-                        areaId=areaId,
-                        streetId=streetId,
-                        date=date,
-                        time=time,
-                        status="Upcoming")
-        db.session.add(new_drive)
-        db.session.commit()
+    new_drive = Drive(
+        driverId=self.id,
+        areaId=areaId,
+        streetId=streetId,
+        date=date,
+        time=time,
+        status="Upcoming"
+    )
 
-        street = Street.query.get(streetId)
-        if street:
-            # Attach residents as observers
-            for resident in street.residents:
-                street.attach(resident)
+    db.session.add(new_drive)
+    db.session.commit()
 
-            # Collect menu from DriverStock
-            menu_items = DriverStock.query.filter_by(driverId=self.id).all()
-            eta = f"{date} {time}"
+    street = Street.query.get(streetId)
 
-            street.notify_drive_scheduled(new_drive, self, menu_items, eta)
+    if street:
+        # Attach residents ONCE
+        street.register_residents_as_observers()
 
-        return new_drive
+        # get menu
+        menu_items = DriverStock.query.filter_by(driverId=self.id).all()
+        eta = f"{date} {time}"
+
+        # send notification
+        street.notify_drive_scheduled(new_drive, self, menu_items, eta)
+
+    return new_drive
+
 
 
     def cancel_drive(self, driveId):
