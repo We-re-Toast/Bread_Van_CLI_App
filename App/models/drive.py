@@ -8,11 +8,10 @@ class Drive(db.Model):
     areaId = db.Column(db.Integer, db.ForeignKey('area.id'), nullable=False)
     menu_id = db.Column(db.Integer,db.ForeignKey('menu.id'))
     streetId = db.Column(db.Integer, db.ForeignKey('street.id'), nullable=False)
-    date = db.Column(db.Date, nullable=False)
+    date = db.Column(db.Date, nullable=False)  
     time = db.Column(db.Time, nullable=False)
     status = db.Column(db.String(20), nullable=False) # enum ?? 
-   # area = db.relationship("Area", backref="drive")
-   # street = db.relationship("Street", backref="drives")
+    stops = db.relationship('Stop', back_populates='drive')
     notifications = db.relationship('Notification', backref='drive')
     
     
