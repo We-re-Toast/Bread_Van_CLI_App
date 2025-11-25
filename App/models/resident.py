@@ -6,18 +6,18 @@ from App.database import db
 from .user import User
 from .driver import Driver
 from .stop import Stop
+from models.observer import Observer   
+
 
 MAX_INBOX_SIZE = 20
 
 
-class Resident(User):
+class Resident(User, Observer):  
     __tablename__ = "resident"
 
     id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
     areaId = db.Column(db.Integer, db.ForeignKey('area.id'), nullable=False)
-    streetId = db.Column(db.Integer,
-                         db.ForeignKey('street.id'),
-                         nullable=False)
+    streetId = db.Column(db.Integer, db.ForeignKey('street.id'), nullable=False)
     houseNumber = db.Column(db.Integer, nullable=False)
     inbox = db.Column(MutableList.as_mutable(JSON), default=[])
 
@@ -25,15 +25,31 @@ class Resident(User):
     street = db.relationship("Street", backref='residents')
     stops = db.relationship('Stop', backref='resident')
 
-    __mapper_args__ = {
-        "polymorphic_identity": "Resident",
-    }
+    __mapper_args__ = {"polymorphic_identity": "Resident"}
 
     def __init__(self, username, password, areaId, streetId, houseNumber):
         super().__init__(username, password)
         self.areaId = areaId
         self.streetId = streetId
         self.houseNumber = houseNumber
+
+    def update(self, subject, message: str):
+        """Called when driver (subject) pushes updates"""
+        self.receive_notif(message)
+
+    def receive_notif(self, message):
+        if self.inbox is None:
+            self.inbox = []
+
+        if len(self.inbox) >= MAX_INBOX_SIZE:
+            self.inbox.pop(0)
+
+        timestamp = datetime.now().strftime("%Y:%m:%d:%H:%M:%S")
+        notif = f"[{timestamp}]: {message}"
+        self.inbox.append(notif)
+
+        db.session.add(self)
+        db.session.commit()
 
     def get_json(self):
         user_json = super().get_json()
