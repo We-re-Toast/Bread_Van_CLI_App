@@ -7,6 +7,7 @@ from .user import User
 # Remove: from .driver import Driver  # This causes circular import
 from .stop import Stop
 
+from .StreetSubscription import StreetSubscription
 MAX_INBOX_SIZE = 20
 
 
@@ -79,5 +80,27 @@ class Resident(User):
 
     # methods to add
     # subscribe method(street_id)
+    def subscribe(self, street_id):
+
+        subscribe = StreetSubscription.query.filter_by(resident_id = self.id, street_id = street_id).first()
+        
+        if subscribe:
+            return 
+        
+        subscription = StreetSubscription (self.id, street_id)
+        db.session.add(subscription)
+        db.session.commit()
+    
+    
     # unsubscribe method(street_id)
+    def unsubscribe(self, street_id):
+
+        subscribe = StreetSubscription.query.filter_by(resident_id = self.id, street_id = street_id).first()
+        
+        if not subscribe:
+            return 
+        
+        db.session.delete(subscribe)
+        db.session.commit()
+    
     # get_notifications

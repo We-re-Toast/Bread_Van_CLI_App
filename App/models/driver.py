@@ -77,16 +77,10 @@ class Driver(User):
         db.session.add(new_drive)
         db.session.commit()
 
-        from .StreetSubscription import StreetSubscription
-        from .resident import Resident
+        from application.DriveNotifier import DriveNotifier
+
+        DriveNotifier.notify(new_drive)
         
-        subscriptions = StreetSubscription.query.filter_by(street_id=streetId).all()
-        for subscription in subscriptions:
-            resident = Resident.query.get(subscription.resident_id)
-            if resident:
-                resident.receive_notif(
-                    f"SCHEDULED>> Drive {new_drive.id} by Driver {self.id} on {date} at {time}"
-                )
         db.session.commit()
         return new_drive
 
