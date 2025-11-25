@@ -36,35 +36,6 @@ class Admin(User):
             db.session.delete(driver)
             db.session.commit()
 
-    def add_area(self, name):
-        area = Area(name=name)
-        db.session.add(area)
-        db.session.commit()
-        return area
-
-    def add_street(self, areaId, name):
-        area = Area.query.get(areaId)
-        if not area:
-            return None
-        street = Street(name=name, areaId=areaId)
-        db.session.add(street)
-        db.session.commit()
-        return street
-
-    def delete_area(self, areaId):
-        area = Area.query.get(areaId)
-        if not area:
-            return None
-        db.session.delete(area)
-        db.session.commit()
-
-    def delete_street(self, streetId):
-        street = Street.query.get(streetId)
-        if not street:
-            return None
-        db.session.delete(street)
-        db.session.commit()
-
     def view_all_areas(self):
         return Area.query.all()
 
