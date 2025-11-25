@@ -1,7 +1,7 @@
 from App.database import db
-from .observer import Subject
+from .observer import SubjectMixin
 
-class Street(db.Model, Subject):
+class Street(db.Model, SubjectMixin):
     __tablename__ = "street"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -12,12 +12,11 @@ class Street(db.Model, Subject):
 
     def __init__(self, name, areaId):
         db.Model.__init__(self)
-        Subject.__init__(self)
+        SubjectMixin.__init__(self)
         self.name = name
         self.areaId = areaId
 
     def register_residents_as_observers(self):
-        """Attach all residents as observers once."""
         for r in self.residents:
             self.attach(r)
 
