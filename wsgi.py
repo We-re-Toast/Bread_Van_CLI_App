@@ -102,7 +102,7 @@ def view_street_drives_command():
 
     areas = Area.query.all()
     if not areas:
-        print("No areas available. Please create an area first.")
+        print("No areas available.")
         return
 
     print("\nAvailable Areas:")
@@ -118,7 +118,7 @@ def view_street_drives_command():
     streets = Street.query.filter_by(areaId=chosen_area.id).all()
     if not streets:
         print(
-            "No streets available in the selected area. Please create a street first."
+            "No streets available in the selected area."
         )
         return
 
