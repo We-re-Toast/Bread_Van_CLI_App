@@ -6,6 +6,7 @@ from App.database import db
 from .user import User
 from .driver import Driver
 from .stop import Stop
+from .notification import Notification
 
 MAX_INBOX_SIZE = 20
 
@@ -19,7 +20,7 @@ class Resident(User):
                          db.ForeignKey('street.id'),
                          nullable=False)
     houseNumber = db.Column(db.Integer, nullable=False)
-    inbox = db.Column(MutableList.as_mutable(JSON), default=[])
+    inbox = db.relationship("Notification", backref="resident", lazy=True)
 
     area = db.relationship("Area", backref='residents')
     street = db.relationship("Street", backref='residents')
@@ -60,22 +61,21 @@ class Resident(User):
             db.session.commit()
         return
 
-    def receive_notif(self, message):
-        if self.inbox is None:
-            self.inbox = []
-
+    def receive_notif(self, message, driverId):
+        notif = Notification( resident_id=self.id, message=message, driver_id=driverId)
         if len(self.inbox) >= MAX_INBOX_SIZE:
-            self.inbox.pop(0)
-
-        timestamp = datetime.now().strftime("%Y:%m:%d:%H:%M:%S")
-        notif = f"[{timestamp}]: {message}"
-        self.inbox.append(notif)
-        db.session.add(self)
+            oldest_notif = min(self.inbox, key=lambda n: n.date)
+            db.session.delete(oldest_notif)
+        db.session.add(notif)
         db.session.commit()
 
+
     def view_inbox(self):
-        return self.inbox
+        return [notif.get_json() for notif in self.inbox]
 
     def view_driver_stats(self, driverId):
         driver = Driver.query.get(driverId)
         return driver
+    
+    def update(self, message: str, driverID = None) -> None:
+        self.receive_notif(message, driverID)

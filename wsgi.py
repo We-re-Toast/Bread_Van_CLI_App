@@ -482,12 +482,18 @@ def view_inbox_command():
     if not resident:
         return
     inbox = resident_view_inbox(resident)
-    if inbox:
-        print("Inbox Notifications:")
-        for notif in inbox:
-            print(notif)
-    else:
+    if not inbox:
         print("Your inbox is empty.")
+        return
+    print("\nYour Inbox Notifications:")
+    print("-" * 100)
+    print(f"{'Notification ID':<15}|{'Date':<20}|{'Driver ID':<10}|{'Message':<30}")
+    
+    for notif in inbox:
+        date_str = notif['date'].strftime("%Y-%m-%d %H:%M")
+        driver_id = notif['driver_id'] if notif['driver_id'] is not None else "N/A"
+        print(f"{notif['id']:<15}|{date_str:<20}|{driver_id:<10}|{notif['message']:<30}")
+    print("\n")
 
 @resident_cli.command("view_driver_stats", help="View the status and location of a driver")
 @click.argument("driver_id")

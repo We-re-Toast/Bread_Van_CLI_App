@@ -1,7 +1,7 @@
-from App.models import Driver, Drive, Street, Item, DriverStock
+from App.models import Driver, Drive, Street, Item, DriverStock, Notification
 from App.database import db
 from datetime import datetime, timedelta
-
+from App.controllers.notification import create_notification
 # All driver-related business logic will be moved here as functions
 
 def driver_schedule_drive(driver, area_id, street_id, date_str, time_str):
@@ -65,4 +65,6 @@ def driver_view_stock(driver):
     return stocks
     
     
-    
+def notify_residents(self, residents, message):
+    for resident in residents:
+        create_notification(user_id=resident.id, message=message, driver_id=self.id)
