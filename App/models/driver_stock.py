@@ -1,6 +1,6 @@
 from App.database import db
 
-class DriverStock(db.Model):
+class DriverStock(db.Model):  # class not used
   id = db.Column(db.Integer, primary_key=True)
   driverId = db.Column(db.Integer, db.ForeignKey('driver.id'), nullable=False)
   itemId = db.Column(db.Integer, db.ForeignKey('item.id'), nullable=False)

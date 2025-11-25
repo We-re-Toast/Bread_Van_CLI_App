@@ -3,6 +3,7 @@ from datetime import datetime
 from .user import User
 from .drive import Drive
 from .street import Street
+# Remove: from .resident import Resident  # This causes circular import
 
 
 class Driver(User):
@@ -10,33 +11,42 @@ class Driver(User):
 
     id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
     status = db.Column(db.String(20), nullable=False)
-    areaId = db.Column(db.Integer, db.ForeignKey('area.id'), nullable=False)
-    streetId = db.Column(db.Integer, db.ForeignKey('street.id'))
-
-    area = db.relationship("Area", backref="drivers")
-    street = db.relationship("Street", backref="drivers")
+    drives = db.relationship('Drive', backref='driver')
+    # Note: areaId and streetId are runtime state (not database columns)
+    # street_id is inherited from User class
 
     __mapper_args__ = {
         "polymorphic_identity": "Driver",
     }
 
-    def __init__(self, username, password, status, areaId, streetId):
+    def __init__(self, username, password, status, areaId=None, streetId=None):
         super().__init__(username, password)
         self.status = status
+        # Runtime state for tracking current location during drives
         self.areaId = areaId
         self.streetId = streetId
+        # Set inherited street_id if streetId is provided
+        if streetId is not None:
+            self.street_id = streetId
 
     def get_json(self):
         user_json = super().get_json()
         user_json['status'] = self.status
-        user_json['areaId'] = self.areaId
-        user_json['streetId'] = self.streetId
+        # Include street_id from User (inherited)
+        user_json['street_id'] = self.street_id
+        # Include runtime state if needed
+        if hasattr(self, 'areaId'):
+            user_json['areaId'] = self.areaId
+        if hasattr(self, 'streetId'):
+            user_json['streetId'] = self.streetId
         return user_json
 
     def login(self, password):
         if super().login(password):
-            self.areaId = 0
-            self.streetId = 0
+            # Reset runtime state
+            self.areaId = None
+            self.streetId = None
+            self.street_id = None  # Clear inherited street_id
             self.status = "Available"
             db.session.commit()
             return True
@@ -47,7 +57,7 @@ class Driver(User):
         self.status = "Offline"
         db.session.commit()
 
-    def schedule_drive(self, areaId, streetId, date_str, time_str):
+    def schedule_drive(self, areaId, streetId, date_str, time_str, menu_id):
         try:
             date = datetime.strptime(date_str, "%Y-%m-%d").date()
             time = datetime.strptime(time_str, "%H:%M").time()
@@ -62,33 +72,42 @@ class Driver(User):
                           streetId=streetId,
                           date=date,
                           time=time,
+                          menu_id=menu_id,
                           status="Upcoming")
         db.session.add(new_drive)
         db.session.commit()
 
-        street = Street.query.get(streetId)
-        if street:
-            for resident in street.residents:
+        from .StreetSubscription import StreetSubscription
+        from .resident import Resident
+        
+        subscriptions = StreetSubscription.query.filter_by(street_id=streetId).all()
+        for subscription in subscriptions:
+            resident = Resident.query.get(subscription.resident_id)
+            if resident:
                 resident.receive_notif(
                     f"SCHEDULED>> Drive {new_drive.id} by Driver {self.id} on {date} at {time}"
                 )
-            db.session.commit()
-        return (new_drive)
+        db.session.commit()
+        return new_drive
 
-    def cancel_drive(self, driveId):
+    def cancel_drive(self, driveId):  
         drive = Drive.query.get(driveId)
         if drive:
             drive.status = "Cancelled"
             db.session.commit()
 
-            street = None
-            if self.streetId is not None:
-                street = Street.query.get(self.streetId)
-            if street:
-                for resident in street.residents:
-                    resident.receive_notif(
-                        f"CANCELLED: Drive {drive.id} by {self.id} on {drive.date} at {drive.time}"
-                    )
+           
+            from .StreetSubscription import StreetSubscription
+            from .resident import Resident
+            
+            if drive.streetId is not None:
+                subscriptions = StreetSubscription.query.filter_by(street_id=drive.streetId).all()
+                for subscription in subscriptions:
+                    resident = Resident.query.get(subscription.resident_id)
+                    if resident:
+                        resident.receive_notif(
+                            f"CANCELLED: Drive {drive.id} by {self.id} on {drive.date} at {drive.time}"
+                        )
                 db.session.commit()
         return None
 
@@ -101,6 +120,7 @@ class Driver(User):
             self.status = "Busy"
             self.areaId = drive.areaId
             self.streetId = drive.streetId
+            self.street_id = drive.streetId
             drive.status = "In Progress"
             db.session.commit()
             return drive

@@ -6,6 +6,7 @@ class User(db.Model):
     __tablename__ = "user"
     
     id = db.Column(db.Integer, primary_key=True)
+    #street_id = db.Column(db.Integer, db.ForeignKey('street.id'))
     username =  db.Column(db.String(20), nullable=False, unique=True)
     password = db.Column(db.String(256), nullable=False)
     logged_in = db.Column(db.Boolean, nullable=False, default=False)
