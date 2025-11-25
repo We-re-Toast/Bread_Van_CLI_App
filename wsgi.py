@@ -291,17 +291,17 @@ def view_all_streets_command():
 
 app.cli.add_command(admin_cli)
 
-### ---------------- DRIVER COMMANDS ---------------- ###
+# Driver Commands
+##################################################################################
+driver_cli = AppGroup('driver', help='Driver object commands')
 
-@app.cli.command("driver-schedule-drive")
-@click.argument("driver_id")
-@click.argument("area_id")
-@click.argument("street_id")
+@driver_cli.command("schedule", help="Schedule a drive and notify residents")
+@click.argument("driver_id", type=int)
+@click.argument("area_id", type=int)
+@click.argument("street_id", type=int)
 @click.argument("date")
 @click.argument("time")
 def driver_schedule_cmd(driver_id, area_id, street_id, date, time):
-    """Schedule a drive and notify residents."""
-    from App.controllers.driver import driver_schedule_drive
     driver = Driver.query.get(driver_id)
     if not driver:
         print("Driver not found.")
@@ -310,17 +310,14 @@ def driver_schedule_cmd(driver_id, area_id, street_id, date, time):
     try:
         new_drive = driver_schedule_drive(driver, area_id, street_id, date, time)
         print(f"✔ Drive {new_drive.id} scheduled successfully.")
-
     except Exception as e:
         print(f"⚠ Error: {str(e)}")
 
 
-@app.cli.command("driver-cancel-drive")
-@click.argument("driver_id")
-@click.argument("drive_id")
+@driver_cli.command("cancel", help="Cancel a drive and notify residents")
+@click.argument("driver_id", type=int)
+@click.argument("drive_id", type=int)
 def driver_cancel_cmd(driver_id, drive_id):
-    """Cancel a drive and notify residents."""
-    from App.controllers.driver import driver_cancel_drive
     driver = Driver.query.get(driver_id)
     if not driver:
         print("Driver not found.")
@@ -333,12 +330,10 @@ def driver_cancel_cmd(driver_id, drive_id):
         print("⚠ Unable to cancel drive.")
 
 
-@app.cli.command("driver-start-drive")
-@click.argument("driver_id")
-@click.argument("drive_id")
+@driver_cli.command("start", help="Start a scheduled drive")
+@click.argument("driver_id", type=int)
+@click.argument("drive_id", type=int)
 def driver_start_cmd(driver_id, drive_id):
-    """Start a scheduled drive."""
-    from App.controllers.driver import driver_start_drive
     driver = Driver.query.get(driver_id)
     if not driver:
         print("Driver not found.")
@@ -351,11 +346,9 @@ def driver_start_cmd(driver_id, drive_id):
         print(f"⚠ Error: {str(e)}")
 
 
-@app.cli.command("driver-end-drive")
-@click.argument("driver_id")
+@driver_cli.command("end", help="End the current active drive")
+@click.argument("driver_id", type=int)
 def driver_end_cmd(driver_id):
-    """End the current in-progress drive."""
-    from App.controllers.driver import driver_end_drive
     driver = Driver.query.get(driver_id)
     if not driver:
         print("Driver not found.")
@@ -368,11 +361,9 @@ def driver_end_cmd(driver_id):
         print(f"⚠ Error: {str(e)}")
 
 
-@app.cli.command("driver-view-drives")
-@click.argument("driver_id")
+@driver_cli.command("drives", help="View upcoming and active drives")
+@click.argument("driver_id", type=int)
 def driver_view_drives_cmd(driver_id):
-    """View all upcoming and in-progress drives."""
-    from App.controllers.driver import driver_view_drives
     driver = Driver.query.get(driver_id)
     if not driver:
         print("Driver not found.")
@@ -387,12 +378,10 @@ def driver_view_drives_cmd(driver_id):
         print(f"- Drive {d.id} on {d.date} at {d.time} [{d.status}]")
 
 
-@app.cli.command("driver-view-stops")
-@click.argument("driver_id")
-@click.argument("drive_id")
+@driver_cli.command("stops", help="View requested stops for a drive")
+@click.argument("driver_id", type=int)
+@click.argument("drive_id", type=int)
 def driver_view_stops_cmd(driver_id, drive_id):
-    """View all requested stops for a drive."""
-    from App.controllers.driver import driver_view_requested_stops
     driver = Driver.query.get(driver_id)
     if not driver:
         print("Driver not found.")
@@ -404,8 +393,12 @@ def driver_view_stops_cmd(driver_id, drive_id):
         return
 
     for stop in stops:
-        print(f"• Resident {stop.residentId} requested stop at {stop.timestamp}")
-        
+        print(f"• Resident {stop.residentId} requested a stop at {stop.timestamp}")
+
+
+# Register with Flask
+app.cli.add_command(driver_cli)
+
 
 # Resident Commands
 ##################################################################################
