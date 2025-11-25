@@ -39,7 +39,7 @@ class Driver(User):
     
     def notify(self, message: str) -> None:
         for observer in self._observers:
-            observer.update(self, message)
+            observer.update(message, self.id)
 
     def get_json(self):
         user_json = super().get_json()
@@ -82,11 +82,13 @@ class Driver(User):
         db.session.commit()
 
         street = Street.query.get(streetId)
+        self._observers = []
         if street:
             for resident in street.residents:
-                resident.receive_notif(
-                    f"SCHEDULED>> Drive {new_drive.id} by Driver {self.id} on {date} at {time}"
-                )
+                self.attach(resident)
+            self.notify(
+                f"NEW DRIVE: Drive {new_drive.id} on {date} at {time}"
+            )
             db.session.commit()
         return (new_drive)
 
@@ -99,11 +101,13 @@ class Driver(User):
             street = None
             if self.streetId is not None:
                 street = Street.query.get(self.streetId)
+            self._observers = []
             if street:
                 for resident in street.residents:
-                    resident.receive_notif(
-                        f"CANCELLED: Drive {drive.id} by {self.id} on {drive.date} at {drive.time}"
-                    )
+                    self.attach(resident)
+                self.notify(
+                    f"DRIVE CANCELLED: Drive {drive.id} on {drive.date} at {drive.time}"
+                )
                 db.session.commit()
         return None
 
