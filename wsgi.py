@@ -5,8 +5,7 @@ from datetime import datetime, timedelta
 from flask_migrate import Migrate, upgrade
 
 from App.database import db, get_migrate
-from App.database import db
-from App.models import User, Admin, Driver, Resident, Drive, Stop, Area, Street
+from App.models import User, Admin, Driver, Resident, Drive, Stop, Area, Street, DriverStock, Observer, SubjectMixin
 from App.main import create_app
 from App.controllers import (get_user, get_all_users_json, get_all_users,
                              get_user_by_username, initialize)
@@ -26,15 +25,28 @@ from App.controllers.driver import (
     driver_view_drives,
     driver_start_drive,
     driver_end_drive,
-    driver_view_requested_stops
+    driver_view_requested_stops,
+    driver_update_drive_menu,
+    driver_update_drive_eta
 )
 from App.controllers.resident import (
     resident_create,
     resident_request_stop,
     resident_cancel_stop,
     resident_view_inbox,
-    resident_view_driver_stats
+    resident_view_driver_stats,
+    resident_subscribe_to_drive,
+    resident_unsubscribe_from_drive,
+    resident_get_subscribed_drives,
+    resident_get_notifications,
+    resident_get_notification_stats,
+    resident_mark_notification_read,
+    resident_mark_all_notifications_read,
+    resident_clear_notifications,
+    resident_update_notification_preferences,
+    resident_request_stop_from_notification
 )
+
 from App.controllers.user import (
     user_login,
     user_logout,
@@ -328,9 +340,49 @@ def schedule_drive_command(date_str, time_str):
         print("Invalid street choice.")
         return
     chosen_street = streets[chosen_index - 1]
+    
+    # Get optional menu and ETA
+    menu = click.prompt("Enter menu items (optional - press Enter to skip)", default="", show_default=False)
+    eta_str = click.prompt("Enter ETA (optional - format HH:MM, press Enter to skip)", default="", show_default=False)
+    
+    menu = menu if menu else None
+    eta_str = eta_str if eta_str else None
+    
     try:
-        new_drive = driver_schedule_drive(driver, chosen_area.id, chosen_street.id, date_str, time_str)
+        new_drive = driver_schedule_drive(driver, chosen_area.id, chosen_street.id, date_str, time_str, menu, eta_str)
         print(f"\nDrive scheduled for {date_str} at {time_str} on {chosen_street.name}, {chosen_area.name}")
+        if menu:
+            print(f"Menu: {menu}")
+        if eta_str:
+            print(f"ETA: {eta_str}")
+    except ValueError as e:
+        print(str(e))
+
+@driver_cli.command("update_drive_menu", help="Update menu for a drive")
+@click.argument("drive_id", type=int)
+@click.argument("menu")
+def update_drive_menu_command(drive_id, menu):
+    driver = require_driver()
+    if not driver:
+        return
+    try:
+        updated_drive = driver_update_drive_menu(driver, drive_id, menu)
+        print(f"Menu updated for drive {drive_id}")
+        print(f"New menu: {menu}")
+    except ValueError as e:
+        print(str(e))
+
+@driver_cli.command("update_drive_eta", help="Update ETA for a drive")
+@click.argument("drive_id", type=int)
+@click.argument("eta_str")
+def update_drive_eta_command(drive_id, eta_str):
+    driver = require_driver()
+    if not driver:
+        return
+    try:
+        updated_drive = driver_update_drive_eta(driver, drive_id, eta_str)
+        print(f"ETA updated for drive {drive_id}")
+        print(f"New ETA: {eta_str}")
     except ValueError as e:
         print(str(e))
 
@@ -353,13 +405,14 @@ def view_drives_command():
         print("No scheduled drives.")
         return
     print("\nYour Scheduled Drives:")
-    print("-" * 70)
-    print(f"{'Drive ID':<10} {'Date':<12} {'Time':<8} {'Area':<20} {'Street':<20}")
-    print("-" * 70)
+    print("-" * 100)
+    print(f"{'Drive ID':<10} {'Date':<12} {'Time':<8} {'Area':<20} {'Street':<20} {'Menu':<30}")
+    print("-" * 100)
     for drive in drives:
         date_str = drive.date.strftime("%Y-%m-%d")
         time_str = drive.time.strftime("%H:%M")
-        print(f"{drive.id:<10} {date_str:<12} {time_str:<8} {drive.area.name:<20} {drive.street.name:<20}")
+        menu_preview = drive.menu[:27] + "..." if drive.menu and len(drive.menu) > 30 else drive.menu
+        print(f"{drive.id:<10} {date_str:<12} {time_str:<8} {drive.area.name:<20} {drive.street.name:<20} {menu_preview or 'No menu':<30}")
     print("\n")
 
 @driver_cli.command("start_drive", help="Start a drive")
@@ -464,6 +517,18 @@ def request_stop_command():
     except ValueError as e:
         print(str(e))
 
+@resident_cli.command("request_stop_by_id", help="Request a stop for a specific drive ID")
+@click.argument("drive_id", type=int)
+def request_stop_by_id_command(drive_id):
+    resident = require_resident()
+    if not resident:
+        return
+    try:
+        stop = resident_request_stop_from_notification(resident, drive_id)
+        print(f"Stop requested for drive {drive_id}.")
+    except ValueError as e:
+        print(str(e))
+
 @resident_cli.command("cancel_stop", help="Cancel a previously requested Stop from a drive")
 @click.argument("drive_id")
 def cancel_stop_command(drive_id):
@@ -477,17 +542,107 @@ def cancel_stop_command(drive_id):
         print(str(e))
 
 @resident_cli.command("view_inbox", help="View notifications in the resident's inbox")
-def view_inbox_command():
+@click.option("--unread-only", is_flag=True, help="Show only unread notifications")
+def view_inbox_command(unread_only):
     resident = require_resident()
     if not resident:
         return
-    inbox = resident_view_inbox(resident)
-    if inbox:
-        print("Inbox Notifications:")
-        for notif in inbox:
-            print(notif)
-    else:
-        print("Your inbox is empty.")
+    notifications = resident_get_notifications(resident, unread_only=unread_only)
+    if not notifications:
+        print("Your inbox is empty." if not unread_only else "No unread notifications.")
+        return
+    
+    title = "UNREAD NOTIFICATIONS" if unread_only else "ALL NOTIFICATIONS"
+    print(f"\n{title}:")
+    print("=" * 80)
+    print(f"{'#':<3} {'Status':<6} {'Time':<19} {'Type':<15} {'Message'}")
+    print("=" * 80)
+    
+    for i, notif in enumerate(notifications, 1):
+        status = "Unread" if not notif.get('read', False) else "Read"
+        notif_type = notif.get('type', 'info')
+        timestamp = notif.get('timestamp', 'Unknown')
+        message = notif.get('message', 'No message')
+        
+        print(f"{i:<3} {status:<6} {timestamp:<19} {notif_type:<15} {message}")
+    
+    stats = resident_get_notification_stats(resident)
+    print(f"\nStatistics: {stats['total_notifications']} total, {stats['unread_notifications']} unread")
+
+@resident_cli.command("notification_stats", help="View notification statistics")
+def notification_stats_command():
+    resident = require_resident()
+    if not resident:
+        return
+    stats = resident_get_notification_stats(resident)
+    print(f"\nNotification Statistics for {resident.username}:")
+    print(f"   Total notifications: {stats['total_notifications']}")
+    print(f"   Unread notifications: {stats['unread_notifications']}")
+    print(f"   Notification preferences: {', '.join(stats['notification_preferences'])}")
+
+@resident_cli.command("mark_notification_read", help="Mark a specific notification as read")
+@click.argument("notification_index", type=int)
+def mark_notification_read_command(notification_index):
+    resident = require_resident()
+    if not resident:
+        return
+    try:
+        resident_mark_notification_read(resident, notification_index - 1)  
+        print(f"Notification #{notification_index} marked as read.")
+    except ValueError as e:
+        print(str(e))
+
+@resident_cli.command("mark_all_read", help="Mark all notifications as read")
+def mark_all_read_command():
+    resident = require_resident()
+    if not resident:
+        return
+    resident_mark_all_notifications_read(resident)
+    print("All notifications marked as read.")
+
+@resident_cli.command("clear_inbox", help="Clear all notifications")
+def clear_inbox_command():
+    resident = require_resident()
+    if not resident:
+        return
+    resident_clear_notifications(resident)
+    print("Inbox cleared.")
+
+@resident_cli.command("update_preferences", help="Update notification preferences")
+def update_preferences_command():
+    resident = require_resident()
+    if not resident:
+        return
+    
+    current_prefs = resident.notification_preferences
+    available_prefs = ["drive_scheduled", "menu_updated", "eta_updated", "stop_confirmed"]
+    
+    print(f"\nCurrent preferences: {current_prefs}")
+    print("\nAvailable notification types:")
+    for i, pref in enumerate(available_prefs, 1):
+        print(f"  {i}. {pref}")
+    
+    print("\nEnter the numbers of preferences you want (comma-separated):")
+    print("Example: 1,2,4 for drive_scheduled, menu_updated, stop_confirmed")
+    
+    try:
+        choices = click.prompt("Your choices", type=str)
+        chosen_indices = [int(x.strip()) for x in choices.split(',')]
+        
+        new_prefs = []
+        for idx in chosen_indices:
+            if 1 <= idx <= len(available_prefs):
+                new_prefs.append(available_prefs[idx-1])
+        
+        if not new_prefs:
+            print("No valid preferences selected.")
+            return
+            
+        resident_update_notification_preferences(resident, new_prefs)
+        print(f"Preferences updated to: {new_prefs}")
+        
+    except ValueError:
+        print("Invalid input. Please enter numbers separated by commas.")
 
 @resident_cli.command("view_driver_stats", help="View the status and location of a driver")
 @click.argument("driver_id")
@@ -508,6 +663,54 @@ def view_driver_stats_command(driver_id):
             print(f"Driver {driver.username} is currently on a drive at {street.name}, {area.name}")
     except ValueError as e:
         print(str(e))
+
+# Resident Subscription Commands for Observer Pattern
+
+@resident_cli.command("subscribe_drive", help="Subscribe to notifications for a drive")
+@click.argument("drive_id", type=int)
+def subscribe_drive_command(drive_id):
+    resident = require_resident()
+    if not resident:
+        return
+    try:
+        resident_subscribe_to_drive(resident, drive_id)
+        print(f"Subscribed to notifications for drive {drive_id}")
+    except ValueError as e:
+        print(str(e))
+
+@resident_cli.command("unsubscribe_drive", help="Unsubscribe from notifications for a drive")
+@click.argument("drive_id", type=int)
+def unsubscribe_drive_command(drive_id):
+    resident = require_resident()
+    if not resident:
+        return
+    try:
+        resident_unsubscribe_from_drive(resident, drive_id)
+        print(f"Unsubscribed from notifications for drive {drive_id}")
+    except ValueError as e:
+        print(str(e))
+
+@resident_cli.command("view_subscribed_drives", help="View drives you're subscribed to")
+def view_subscribed_drives_command():
+    resident = require_resident()
+    if not resident:
+        return
+    drives = resident_get_subscribed_drives(resident)
+    if not drives:
+        print("You are not subscribed to any drives.")
+        return
+    
+    print("\nYour Subscribed Drives:")
+    print("-" * 100)
+    print(f"{'Drive ID':<10} {'Date':<12} {'Time':<8} {'Area':<20} {'Street':<20} {'Menu':<30}")
+    print("-" * 100)
+    for drive in drives:
+        date_str = drive.date.strftime("%Y-%m-%d")
+        time_str = drive.time.strftime("%H:%M")
+        menu_preview = drive.menu[:27] + "..." if drive.menu and len(drive.menu) > 30 else drive.menu
+        eta_str = drive.eta.strftime("%H:%M") if drive.eta else "Not set"
+        print(f"{drive.id:<10} {date_str:<12} {time_str:<8} {drive.area.name:<20} {drive.street.name:<20} {menu_preview or 'No menu':<30}")
+    print("\n")
 
 
 app.cli.add_command(resident_cli)
