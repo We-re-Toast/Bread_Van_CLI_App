@@ -35,11 +35,7 @@ from .driver import (
 from .admin import (
     admin_create_driver,
     admin_delete_driver,
-    admin_add_area,
-    admin_delete_area,
     admin_view_all_areas,
-    admin_add_street,
-    admin_delete_street,
     admin_view_all_streets,
     admin_add_item,
     admin_delete_item,
@@ -62,8 +58,6 @@ __all__ = [
     "driver_update_stock", "driver_view_stock",
 
     # admin
-    "admin_create_driver", "admin_delete_driver", "admin_add_area",
-    "admin_delete_area", "admin_view_all_areas", "admin_add_street",
-    "admin_delete_street", "admin_view_all_streets", "admin_add_item",
+    "admin_create_driver", "admin_delete_driver", "admin_add_item",
     "admin_delete_item", "admin_view_all_items"
 ]
