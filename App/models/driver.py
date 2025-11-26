@@ -3,9 +3,9 @@ from datetime import datetime
 from .user import User
 from .drive import Drive
 from .street import Street
+from models.subject import Subject
 
-
-class Driver(User):
+class Driver(User, Subject):
     __tablename__ = "driver"
 
     id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
@@ -33,6 +33,18 @@ class Driver(User):
         user_json['streetId'] = self.streetId
         return user_json
 
+    def add_observer(self, observer):
+
+        pass
+
+    def remove_observer(self, observer):
+        pass 
+
+    def notify_observers(self, message: str):
+        """Notify all residents on the driver's street."""
+        if self.street:
+            for resident in self.street.residents:
+                resident.update(self, message)
     def login(self, password):
         if super().login(password):
             self.areaId = 0
