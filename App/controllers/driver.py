@@ -4,20 +4,45 @@ from datetime import datetime, timedelta
 
 # All driver-related business logic will be moved here as functions
 
-def driver_schedule_drive(driver, area_id, street_id, date_str, time_str):
+def driver_schedule_drive(driver, area_id, street_id, date_str, time_str, menu=None, eta_str=None):
     try:
         date = datetime.strptime(date_str, "%Y-%m-%d").date()
         time = datetime.strptime(time_str, "%H:%M").time()
     except ValueError:
         raise ValueError("Invalid date or time format. Use YYYY-MM-DD and HH:MM.")
+    
     scheduled_datetime = datetime.combine(date, time)
     if scheduled_datetime < datetime.now():
         raise ValueError("Cannot schedule a drive in the past.")
+    
     one_year_later = datetime.now() + timedelta(days=60)
     if scheduled_datetime > one_year_later:
         raise ValueError("Cannot schedule a drive more than 60 days in advance.")
-    existing_drive = Drive.query.filter_by(areaId=area_id, streetId=street_id, date=date).first()
-    new_drive = driver.schedule_drive(area_id, street_id, date_str, time_str)
+    
+    eta_time = None
+    if eta_str:
+        try:
+            eta_time = datetime.strptime(eta_str, "%H:%M").time()
+        except ValueError:
+            raise ValueError("Invalid ETA format. Use HH:MM.")
+    
+    new_drive = Drive(
+        driverId=driver.id,
+        areaId=area_id,
+        streetId=street_id,
+        date=date,
+        time=time,
+        status="Upcoming",
+        menu=menu,
+        eta=eta_time
+    )
+    
+    db.session.add(new_drive)
+    db.session.commit()
+    
+    # Notify residents about the new drive
+    new_drive.notify_new_drive()
+    
     return new_drive
 
 def driver_cancel_drive(driver, drive_id):
@@ -65,4 +90,25 @@ def driver_view_stock(driver):
     return stocks
     
     
+###################################################################################################################################
+
+def driver_update_drive_menu(driver, drive_id, menu):
+    drive = Drive.query.get(drive_id)
+    if not drive or drive.driverId != driver.id:
+        raise ValueError("Drive not found or you don't have permission.")
     
+    drive.set_menu_and_eta(menu, drive.eta)
+    return drive
+
+def driver_update_drive_eta(driver, drive_id, eta_str):
+    drive = Drive.query.get(drive_id)
+    if not drive or drive.driverId != driver.id:
+        raise ValueError("Drive not found or you don't have permission.")
+    
+    try:
+        eta_time = datetime.strptime(eta_str, "%H:%M").time()
+    except ValueError:
+        raise ValueError("Invalid ETA format. Use HH:MM.")
+    
+    drive.set_menu_and_eta(drive.menu, eta_time)
+    return drive
