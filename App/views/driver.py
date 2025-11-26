@@ -45,11 +45,6 @@ def get_drives_api():
             return jsonify([drive.get_json() for drive in drives])
         except ResourceNotFound as e:
             return jsonify(error=str(e)), 404
-    # If resident, maybe show all drives? Or drives in their area?
-    # For now, let's just return all drives for simplicity or restrict.
-    # Requirement: "(Resident) View inbox for scheduled drives".
-    # This endpoint seems more for the driver to view their schedule.
-    # We'll stick to driver view here.
     return jsonify(error="Unauthorized"), 403
 
 
