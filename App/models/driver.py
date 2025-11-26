@@ -77,9 +77,9 @@ class Driver(User):
         db.session.add(new_drive)
         db.session.commit()
 
-        from application.DriveNotifier import DriveNotifier
+        from App.application.DriveNotifier import DriveNotifier # needs to update
 
-        DriveNotifier.notify(new_drive)
+        DriveNotifier().notify(new_drive)
         
         db.session.commit()
         return new_drive

@@ -1,5 +1,5 @@
 from .Subject import Subject
-from models.StreetSubscription import StreetSubscription
+from App.models.StreetSubscription import StreetSubscription
 
 class DriveNotifier(Subject):
 
@@ -18,5 +18,5 @@ class DriveNotifier(Subject):
 
         for subscription in subscriptions:
 
-            observer = ResidentObserver(subscription.residet_id)
+            observer = ResidentObserver(subscription.resident_id)
             observer.update(drive)
