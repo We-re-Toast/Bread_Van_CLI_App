@@ -5,6 +5,7 @@ from .drive import *
 from .driver import *
 from .initialize import *
 from .resident import *
-from .stop import *
+from .stop_request import *
 from .street import *
 from .user import *
+from .item import *
