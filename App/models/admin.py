@@ -1,8 +1,5 @@
 from App.database import db
 from .user import User
-from .driver import Driver
-from .area import Area
-from .street import Street
 
 class Admin(User):
     __tablename__ = "admin"
@@ -21,6 +18,7 @@ class Admin(User):
         return user_json
 
     def create_driver(self, username, password):
+        from .driver import Driver
         driver = Driver(username=username,
                          password=password,
                          status="Offline",
@@ -31,18 +29,22 @@ class Admin(User):
         return driver
 
     def delete_driver(self, driverId):
+        from .driver import Driver
         driver = Driver.query.get(driverId)
         if driver:
             db.session.delete(driver)
             db.session.commit()
 
     def add_area(self, name):
+        from .area import Area
         area = Area(name=name)
         db.session.add(area)
         db.session.commit()
         return area
 
     def add_street(self, areaId, name):
+        from .area import Area
+        from .street import Street
         area = Area.query.get(areaId)
         if not area:
             return None
@@ -52,6 +54,7 @@ class Admin(User):
         return street
 
     def delete_area(self, areaId):
+        from .area import Area
         area = Area.query.get(areaId)
         if not area:
             return None
@@ -59,6 +62,7 @@ class Admin(User):
         db.session.commit()
 
     def delete_street(self, streetId):
+        from .street import Street
         street = Street.query.get(streetId)
         if not street:
             return None
@@ -66,10 +70,9 @@ class Admin(User):
         db.session.commit()
 
     def view_all_areas(self):
+        from .area import Area
         return Area.query.all()
 
     def view_all_streets(self):
+        from .street import Street
         return Street.query.all()
-        
-
-  

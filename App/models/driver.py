@@ -1,10 +1,6 @@
 from App.database import db
 from datetime import datetime
 from .user import User
-from .drive import Drive
-from .street import Street
-from .driver_stock import DriverStock
-
 
 class Driver(User):
     __tablename__ = "driver"
@@ -30,8 +26,8 @@ class Driver(User):
     def get_json(self):
         user_json = super().get_json()
         user_json['status'] = self.status
-        user_json['areaId'] = self.areaId
-        user_json['streetId'] = self.streetId
+        user_json['area'] = self.area.name
+        user_json['street'] = self.street.name
         return user_json
 
     def login(self, password):
@@ -48,60 +44,59 @@ class Driver(User):
         self.status = "Offline"
         db.session.commit()
 
-    def schedule_drive(self, areaId, streetId, date_str, time_str):
-        date = datetime.strptime(date_str, "%Y-%m-%d").date()
-        time = datetime.strptime(time_str, "%H:%M").time()
+    def schedule_drive(self, areaId, streetId, date_str, time_str, menu=None, eta=None):
+        try:
+            # Import locally to avoid circular imports
+            from .drive import Drive
+            
+            date = datetime.strptime(date_str, "%Y-%m-%d").date()
+            time = datetime.strptime(time_str, "%H:%M").time()
+        except Exception:
+            print(
+                "Invalid date or time format. Please use YYYY-MM-DD for date and HH:MM for time."
+            )
+            return
 
-        new_drive = Drive(
-            driverId=self.id,
-            areaId=areaId,
-            streetId=streetId,
-            date=date,
-            time=time,
-            status="Upcoming"
-        )
-
+        new_drive = Drive(driverId=self.id,
+                        areaId=areaId,
+                        streetId=streetId,
+                        date=date,
+                        time=time,
+                        status="Upcoming",
+                        menu=menu,
+                        eta=eta)
         db.session.add(new_drive)
         db.session.commit()
-
-        street = Street.query.get(streetId)
-
-        if street:
-            # Attach residents ONCE
-            street.register_residents_as_observers()
-
-            # get menu
-            menu_items = DriverStock.query.filter_by(driverId=self.id).all()
-            eta = f"{date} {time}"
-
-            # send notification
-            street.notify_drive_scheduled(new_drive, self, menu_items, eta)
-
+        
+        menu_text = f"Menu: {menu}" if menu else "No menu specified"
+        eta_text = f"ETA: {eta}" if eta else f"at {time_str}"
+        
+        # Note: You'll need to implement notification_service or remove this part
+        # notification_service.notify(
+        #     str(streetId),
+        #     f"Bread van scheduled for {date_str} {eta_text}. {menu_text}",
+        #     notification_data
+        # )
+        
         return new_drive
 
-
-
     def cancel_drive(self, driveId):
+        from .drive import Drive
+
         drive = Drive.query.get(driveId)
         if drive:
             drive.status = "Cancelled"
             db.session.commit()
-
-            street = None
-            if self.streetId is not None:
-                street = Street.query.get(self.streetId)
-            if street:
-                for resident in street.residents:
-                    resident.receive_notif(
-                        f"CANCELLED: Drive {drive.id} by {self.id} on {drive.date} at {drive.time}"
-                    )
-                db.session.commit()
         return None
 
     def view_drives(self):
+        from .drive import Drive
+        
         return Drive.query.filter_by(driverId=self.id).all()
 
     def start_drive(self, driveId):
+        from .drive import Drive
+
         drive = Drive.query.get(driveId)
         if drive:
             self.status = "Busy"
@@ -113,16 +108,41 @@ class Driver(User):
         return None
 
     def end_drive(self, driveId):
+        # Import locally to avoid circular imports
+        from .drive import Drive
         drive = Drive.query.get(driveId)
         if drive:
             self.status = "Available"
+            self.streetId = None
             drive.status = "Completed"
             db.session.commit()
             return drive
         return None
 
     def view_requested_stops(self, driveId):
+        from .drive import Drive
+
         drive = Drive.query.get(driveId)
         if drive:
             return drive.stops
+        return None
+
+    def update_drive_menu(self, driveId, menu):
+        from .drive import Drive
+
+        drive = Drive.query.get(driveId)
+        if drive and drive.driverId == self.id:
+            drive.menu = menu
+            db.session.commit()
+            return drive
+        return None
+
+    def update_drive_eta(self, driveId, eta):
+        from .drive import Drive
+
+        drive = Drive.query.get(driveId)
+        if drive and drive.driverId == self.id:
+            drive.eta = eta
+            db.session.commit()
+            return drive
         return None

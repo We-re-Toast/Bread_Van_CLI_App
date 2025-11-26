@@ -1,13 +1,14 @@
 from abc import ABC, abstractmethod
+from typing import List
 
 class Observer:
-    def update(self, message):
-        """Receive notification from subject"""
-        raise NotImplementedError("Observer must implement update()")
-
+    def update(self, drive, menu, eta):
+        """Update method - can be overridden by subclasses"""
+        pass
 
 class SubjectMixin:
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self._observers = []
 
     def attach(self, observer):
@@ -15,12 +16,10 @@ class SubjectMixin:
             self._observers.append(observer)
 
     def detach(self, observer):
-        try:
+        if observer in self._observers:
             self._observers.remove(observer)
-        except ValueError:
-            pass
 
-    def notify(self, message):
+    def notify(self, drive, menu, eta):
         for observer in self._observers:
-            observer.update(message)
-
+            if hasattr(observer, 'update'):
+                observer.update(drive, menu, eta)

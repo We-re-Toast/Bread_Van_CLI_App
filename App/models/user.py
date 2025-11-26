@@ -1,6 +1,5 @@
 from werkzeug.security import check_password_hash, generate_password_hash
 from App.database import db
-from .drive import Drive
 
 class User(db.Model):
     __tablename__ = "user"
@@ -20,7 +19,6 @@ class User(db.Model):
         self.username = username
         self.set_password(password)
         self.logged_in = False
-        self.inbox = []
 
     def get_json(self):
         return{
@@ -31,7 +29,7 @@ class User(db.Model):
     def set_password(self, password):
         """Create hashed password."""
         self.password = generate_password_hash(password)
-    
+
     def check_password(self, password):
         """Check hashed password."""
         return check_password_hash(self.password, password)
@@ -48,6 +46,5 @@ class User(db.Model):
         db.session.commit()
 
     def view_street_drives(self, areaId, streetId):
+        from .drive import Drive
         return Drive.query.filter_by(areaId=areaId, streetId=streetId).all()
-    
-
