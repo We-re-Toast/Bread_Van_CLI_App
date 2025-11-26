@@ -11,8 +11,10 @@ from App.main import create_app
 from App.controllers import (get_user, get_all_users_json, get_all_users,
                              get_user_by_username, initialize)
 from App.controllers.admin import (
+    admin_add_item,
     admin_create_driver,
     admin_delete_driver,
+    admin_delete_item,
     admin_view_all_areas,
     admin_view_all_streets
 )
@@ -36,6 +38,7 @@ from App.controllers.user import (
     user_logout,
     user_view_street_drives
 )
+from App.models.item import Item
 
 # This commands file allow you to create convenient CLI commands for testing controllers
 
@@ -202,6 +205,52 @@ def delete_driver_command(driver_id):
         print(f"Driver {driver.username} deleted.")
     except ValueError as e:
         print(str(e))
+
+@admin_cli.command("add_item", help="Adds an item to the menu")
+@click.argument("name")
+@click.argument("price", type=float)
+@click.argument("description")
+@click.argument("tags", default = "")
+def add_item_command(name, price, description, tags):
+    admin = require_admin()
+    if not admin:
+        return
+    tags_list = [tag.strip() for tag in tags.split(",")] if tags else []
+    try:
+        item = admin_add_item(name, price, description, tags_list)
+        print(f"Item {item.name} added with ID {item.id}.")
+
+    except ValueError as e:
+        print(str(e))
+
+@admin_cli.command("delete_item", help="Deletes an item from the menu")
+@click.argument("item_id", type=int)
+def delete_item_command(item_id):
+    admin = require_admin()
+    if not admin:
+        return
+    try:
+        item = admin_delete_item(item_id)
+        print(f"Item {item.name} deleted.")
+    except ValueError as e:
+        print(str(e))
+        
+@admin_cli.command("view_all_items", help="View all menu items")
+def view_all_items_command():
+    admin = require_admin()
+    if not admin:
+        return
+    items = Item.query.all()
+    if not items:
+        print("No items available.")
+        return
+    print("\nAll Menu Items:")
+    print("-" * 70)
+    print(f"{'ID':<10} {'Name':<20} {'Price':<10} {'Description':<30}")
+    print("-" * 70)
+    for item in items:
+        print(f"{item.id:<10} {item.name:<20} ${item.price:<10.2f} {item.description:<30}")
+    print("\n")
 
 @admin_cli.command("view_all_areas", help="View all areas")
 def view_all_areas_command():

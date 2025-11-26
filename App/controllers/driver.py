@@ -2,6 +2,8 @@ from App.models import Driver, Drive, Street, Item, DriverStock, Notification
 from App.database import db
 from datetime import datetime, timedelta
 from App.controllers.notification import create_notification
+from App.controllers.menu import get_menu_text
+from App.models.resident import Resident 
 # All driver-related business logic will be moved here as functions
 
 def driver_schedule_drive(driver, area_id, street_id, date_str, time_str):
@@ -10,14 +12,28 @@ def driver_schedule_drive(driver, area_id, street_id, date_str, time_str):
         time = datetime.strptime(time_str, "%H:%M").time()
     except ValueError:
         raise ValueError("Invalid date or time format. Use YYYY-MM-DD and HH:MM.")
+    
     scheduled_datetime = datetime.combine(date, time)
+
     if scheduled_datetime < datetime.now():
         raise ValueError("Cannot schedule a drive in the past.")
+    
     one_year_later = datetime.now() + timedelta(days=60)
+
     if scheduled_datetime > one_year_later:
         raise ValueError("Cannot schedule a drive more than 60 days in advance.")
+    
     existing_drive = Drive.query.filter_by(areaId=area_id, streetId=street_id, date=date).first()
     new_drive = driver.schedule_drive(area_id, street_id, date_str, time_str)
+    
+    residents = Resident.query.filter_by(areaId=area_id, streetId=street_id).all()
+    menu_text = get_menu_text()
+    eta = datetime.combine(date, time).strftime("%I:%M %p")
+    message = f"A route is scheduled for your neighborhood. \nETA: {eta}\n\n{menu_text}"
+
+    for resident in residents:
+        create_notification(user_id=resident.id, message=message, driver_id=driver.id)
+    
     return new_drive
 
 def driver_cancel_drive(driver, drive_id):

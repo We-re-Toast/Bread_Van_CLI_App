@@ -1,5 +1,5 @@
 from App.database import db
-from App.models import Admin, Driver, Resident, Area, Street
+from App.models import Admin, Driver, Resident, Area, Street, Item
 
 
 def initialize():
@@ -66,6 +66,20 @@ def initialize():
                          streetId=street21.id,
                          houseNumber=13)
     db.session.add_all([resident1, resident2, resident3])
+    db.session.commit()
+
+    #Create Menu Items
+    item1 = Item(name = "Bread Loaf", price = 12.50, description = "Freshly baked bread loaf.", tags = ["bread"])
+    item2 = Item(name = "Croissant", price = 8.00, description = "Buttery croissant.", tags = ["pastry"])
+    item3 = Item(name = "Muffin", price = 6.00, description = "Blueberry muffin.", tags = ["pastry"])
+    item4 = Item(name = "Baguette", price = 10.00, description = "Crispy French baguette.", tags = ["bread"])
+    item5 = Item(name = "Donut", price = 7.00, description = "Glazed donut.", tags = ["sweet" , "pastry"])
+    item6 = Item(name = "Bagel", price = 5.00, description = "Fresh bagel.", tags = ["bread"])
+    item7 = Item(name = "Sourdough Bread", price = 15.00, description = "Tangy sourdough bread.", tags = ["bread"])
+    item8 = Item(name = "Cinnamon Roll", price = 6.00, description = "Sweet cinnamon roll.", tags = ["sweet" , "pastry"])
+    item9 = Item(name = "Cheese Danish", price = 5.00, description = "Cream cheese danish.", tags = ["pastry"])
+
+    db.session.add_all([item1, item2, item3, item4, item5, item6, item7, item8, item9])
     db.session.commit()
 
     #Creating Drives and Stops
