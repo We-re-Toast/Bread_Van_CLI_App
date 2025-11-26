@@ -1,68 +1,104 @@
-from App.models import Driver, Drive, Street, Item, DriverStock
 from App.database import db
-from datetime import datetime, timedelta
+from App.models import Driver, User, Area, Street
+from App.models.enums import DriverStatus
+from App.exceptions import ResourceNotFound, DuplicateEntity
 
-# All driver-related business logic will be moved here as functions
 
-def driver_schedule_drive(driver, area_id, street_id, date_str, time_str):
-    try:
-        date = datetime.strptime(date_str, "%Y-%m-%d").date()
-        time = datetime.strptime(time_str, "%H:%M").time()
-    except ValueError:
-        raise ValueError("Invalid date or time format. Use YYYY-MM-DD and HH:MM.")
-    scheduled_datetime = datetime.combine(date, time)
-    if scheduled_datetime < datetime.now():
-        raise ValueError("Cannot schedule a drive in the past.")
-    one_year_later = datetime.now() + timedelta(days=60)
-    if scheduled_datetime > one_year_later:
-        raise ValueError("Cannot schedule a drive more than 60 days in advance.")
-    existing_drive = Drive.query.filter_by(areaId=area_id, streetId=street_id, date=date).first()
-    new_drive = driver.schedule_drive(area_id, street_id, date_str, time_str)
-    return new_drive
+def create_driver(
+    username, password, status=DriverStatus.OFF_DUTY, area_id=None, street_id=None
+):
+    existing_driver = User.query.filter_by(username=username).first()
+    if existing_driver:
+        raise DuplicateEntity(f"Driver '{username}' already exists")
 
-def driver_cancel_drive(driver, drive_id):
-    return driver.cancel_drive(drive_id)
+    if area_id and street_id:
+        area = Area.query.filter_by(id=area_id).first()
+        street = Street.query.filter_by(id=street_id, area_id=area_id).first()
+        if not area or not street:
+            raise ResourceNotFound(
+                f"Area with ID '{area_id}' or Street with ID '{street_id}' not found"
+            )
 
-def driver_view_drives(driver):
-    return [d for d in driver.view_drives() if d.status in ("Upcoming", "In Progress")]
-
-def driver_start_drive(driver, drive_id):
-    current_drive = Drive.query.filter_by(driverId=driver.id, status="In Progress").first()
-    if current_drive:
-        raise ValueError(f"You are already on drive {current_drive.id}.")
-    drive = Drive.query.filter_by(driverId=driver.id, id=drive_id, status="Upcoming").first()
-    if not drive:
-        raise ValueError("Drive not found or cannot be started.")
-    return driver.start_drive(drive_id)
-
-def driver_end_drive(driver):
-    current_drive = Drive.query.filter_by(driverId=driver.id, status="In Progress").first()
-    if not current_drive:
-        raise ValueError("No drive in progress.")
-    return driver.end_drive(current_drive.id)
-
-def driver_view_requested_stops(driver, drive_id):
-    stops = driver.view_requested_stops(drive_id)
-    if not stops:
-        return []
-    return stops
-
-def driver_update_stock(driver, item_id, quantity):
-    item =  Item.query.get(item_id)
-    if not item:
-        raise ValueError("Invalid item ID.")
-    stock =  DriverStock.query.filter_by(driverId=driver.id, itemId=item_id).first()
-    if stock:
-        stock.quantity = quantity
-    else:
-        stock = DriverStock(driverId=driver.id, itemId=item_id, quantity=quantity)
-        db.session.add(stock)
+    new_driver = Driver(
+        username=username,
+        password=password,
+        status=status,
+        area_id=area_id,
+        street_id=street_id,
+    )
+    db.session.add(new_driver)
     db.session.commit()
-    return stock
+    return new_driver
 
-def driver_view_stock(driver):
-    stocks = DriverStock.query.filter_by(driverId=driver.id).all() 
-    return stocks
-    
-    
-    
+
+def get_all_drivers():
+    drivers = Driver.query.all()
+    return [str(driver) for driver in drivers]
+
+
+def get_all_drivers_json():
+    drivers = Driver.query.all()
+    return [driver.get_json() for driver in drivers]
+
+
+def delete_driver(driver_id):
+    driver = db.session.get(Driver, driver_id)
+    if not driver:
+        raise ResourceNotFound("Driver not found")
+
+    db.session.delete(driver)
+    db.session.commit()
+    return True
+
+
+def update_driver_status(driver_id, status):
+    driver = Driver.query.get(driver_id)
+    if not driver:
+        raise ResourceNotFound(f"Driver with ID '{driver_id}' does not exist")
+    driver.status = status
+    db.session.commit()
+    return driver
+
+
+def update_username(driver_id, new_username):
+    driver = Driver.query.get(driver_id)
+    if not driver:
+        raise ResourceNotFound(f"Driver with ID '{driver_id}' does not exist")
+    if Driver.query.filter_by(username=new_username).first():
+        raise DuplicateEntity(f"Username '{new_username}' is already taken")
+    driver.username = new_username
+    db.session.commit()
+    return True
+
+
+def update_area_id(driver_id, new_area_id):
+    driver = Driver.query.get(driver_id)
+    if not driver:
+        raise ResourceNotFound(f"Driver with ID '{driver_id}' does not exist")
+    driver.area_id = new_area_id
+    db.session.commit()
+    return True
+
+
+def update_street_id(driver_id, new_street_id):
+    driver = Driver.query.get(driver_id)
+    if not driver:
+        raise ResourceNotFound(f"Driver with ID '{driver_id}' does not exist")
+    driver.street_id = new_street_id
+    db.session.commit()
+    return True
+
+def get_driver_status_and_location(driver_id):
+    driver = Driver.query.get(driver_id)
+    if not driver:
+        raise ResourceNotFound(f"Driver with ID '{driver_id}' does not exist")
+    return {
+        "driver_id": driver.id,
+        "driver_name": driver.username,
+        "status": driver.status,
+        "current_location": (
+            f"{driver.street.name}, {driver.area.name}"
+            if driver.status == "In Progress"
+            else "Unknown"
+        ),
+    }
