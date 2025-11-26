@@ -9,17 +9,19 @@ class Item(db.Model):
     tags = db.Column(db.JSON)
 
     def __init__(self, name, price, description, tags):
-       self.name = name
-       self.price = price
-       self.description = description
-       self.tags = tags
+        self.name = name
+        self.price = price
+        self.description = description
+        self.tags = tags
+
+    def __repr__(self):
+        return f"ID: {self.id} | Name: {self.name} | Price: {self.price}"
 
     def get_json(self):
-       return {
-           'id': self.id,
-           'name': self.name,
-           'price': self.price,
-           'description': self.description,
-           'tags': self.tags
-       }
-    
+        return {
+            "id": self.id,
+            "name": self.name,
+            "price": self.price,
+            "description": self.description,
+            "tags": self.tags,
+        }

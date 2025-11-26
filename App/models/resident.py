@@ -1,81 +1,41 @@
-from datetime import datetime
-from sqlalchemy.ext.mutable import MutableList
-from sqlalchemy import JSON
-
 from App.database import db
 from .user import User
-from .driver import Driver
-from .stop import Stop
-
-MAX_INBOX_SIZE = 20
 
 
 class Resident(User):
-    __tablename__ = "resident"
 
-    id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
-    areaId = db.Column(db.Integer, db.ForeignKey('area.id'), nullable=False)
-    streetId = db.Column(db.Integer,
-                         db.ForeignKey('street.id'),
-                         nullable=False)
-    houseNumber = db.Column(db.Integer, nullable=False)
-    inbox = db.Column(MutableList.as_mutable(JSON), default=[])
+    id = db.Column(db.Integer, db.ForeignKey("user.id"), primary_key=True)
+    house_number = db.Column(db.Integer, nullable=False)
 
-    area = db.relationship("Area", backref='residents')
-    street = db.relationship("Street", backref='residents')
-    stops = db.relationship('Stop', backref='resident')
+    """Foreign Keys"""
+    area_id = db.Column(db.Integer, db.ForeignKey("area.id"), nullable=False)
+    street_id = db.Column(db.Integer, db.ForeignKey("street.id"), nullable=False)
+
+    """Relationships"""
+    stop_requests = db.relationship("StopRequest", backref="resident", lazy=True)
+    subscriptions = db.relationship("Subscription", backref="resident", lazy=True)
+    inbox = db.relationship("Notification", backref="resident", lazy=True)
 
     __mapper_args__ = {
-        "polymorphic_identity": "Resident",
+        "polymorphic_identity": "resident",
     }
 
-    def __init__(self, username, password, areaId, streetId, houseNumber):
+    def __init__(self, username, password, area_id, street_id, house_number):
         super().__init__(username, password)
-        self.areaId = areaId
-        self.streetId = streetId
-        self.houseNumber = houseNumber
+        self.area_id = area_id
+        self.street_id = street_id
+        self.house_number = house_number
+
+    def __repr__(self):
+        return f"ID: {self.id} | Username: {self.username} | Area: {self.area.name} | Street: {self.street.name} | House Number: {self.house_number}"
 
     def get_json(self):
-        user_json = super().get_json()
-        user_json['areaId'] = self.areaId
-        user_json['streetId'] = self.streetId
-        user_json['houseNumber'] = self.houseNumber
-        user_json['inbox'] = self.inbox
-        return user_json
-
-    def request_stop(self, driveId):
-        try:
-            new_stop = Stop(driveId=driveId, residentId=self.id)
-            db.session.add(new_stop)
-            db.session.commit()
-            return (new_stop)
-        except Exception:
-            db.session.rollback()
-            return None
-
-    def cancel_stop(self, stopId):
-        stop = Stop.query.get(stopId)
-        if stop:
-            db.session.delete(stop)
-            db.session.commit()
-        return
-
-    def receive_notif(self, message):
-        if self.inbox is None:
-            self.inbox = []
-
-        if len(self.inbox) >= MAX_INBOX_SIZE:
-            self.inbox.pop(0)
-
-        timestamp = datetime.now().strftime("%Y:%m:%d:%H:%M:%S")
-        notif = f"[{timestamp}]: {message}"
-        self.inbox.append(notif)
-        db.session.add(self)
-        db.session.commit()
-
-    def view_inbox(self):
-        return self.inbox
-
-    def view_driver_stats(self, driverId):
-        driver = Driver.query.get(driverId)
-        return driver
+        return {
+            "id": self.id,
+            "username": self.username,
+            "area_id": self.area_id,
+            "area_name": self.area.name,
+            "street_id": self.street_id,
+            "street_name": self.street.name,
+            "house_number": self.house_number,
+        }
