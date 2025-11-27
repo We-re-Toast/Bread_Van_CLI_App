@@ -26,6 +26,13 @@ class Resident(User):
     __mapper_args__ = {
         "polymorphic_identity": "Resident",
     }
+    
+
+    def list():
+        return Resident.query.all()
+
+    def get_by_id(id):
+        return Resident.query.get(id)
 
     def __init__(self, username, password, areaId, houseNumber):
         super().__init__(username, password)
@@ -90,6 +97,7 @@ class Resident(User):
         subscription = StreetSubscription (self.id, street_id)
         db.session.add(subscription)
         db.session.commit()
+        return subscription
     
     
     # unsubscribe method(street_id)
@@ -103,4 +111,4 @@ class Resident(User):
         db.session.delete(subscribe)
         db.session.commit()
     
-    # get_notifications
+    # get_notifications - view inbox?

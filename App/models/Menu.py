@@ -7,4 +7,5 @@ class Menu(db.Model):
     items = db.relationship('MenuBreadItem', backref='menu')
     drives = db.relationship('Drive', backref = 'menu')
     
-  
+    def __init__(self, name):
+        self.name = name

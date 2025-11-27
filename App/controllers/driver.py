@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 # All driver-related business logic will be moved here as functions
 
-def driver_schedule_drive(driver, area_id, street_id, date_str, time_str):
+def driver_schedule_drive(driver, area_id, street_id, date_str, time_str, menu_id):
     try:
         date = datetime.strptime(date_str, "%Y-%m-%d").date()
         time = datetime.strptime(time_str, "%H:%M").time()
@@ -17,7 +17,7 @@ def driver_schedule_drive(driver, area_id, street_id, date_str, time_str):
     if scheduled_datetime > one_year_later:
         raise ValueError("Cannot schedule a drive more than 60 days in advance.")
     existing_drive = Drive.query.filter_by(areaId=area_id, streetId=street_id, date=date).first()
-    new_drive = driver.schedule_drive(area_id, street_id, date_str, time_str)
+    new_drive = driver.schedule_drive(area_id, street_id, date_str, time_str, menu_id)
     return new_drive
 
 def driver_cancel_drive(driver, drive_id):

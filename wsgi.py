@@ -4,9 +4,11 @@ from flask.cli import with_appcontext, AppGroup
 from datetime import datetime, timedelta
 from flask_migrate import Migrate, upgrade
 
+from App.utils.display import *
+
 from App.database import db, get_migrate
 from App.database import db
-from App.models import User, Admin, Driver, Resident, Drive, Stop, Area, Street
+from App.models import User, Admin, Driver, Resident, Drive, Stop, Area, Street, StreetSubscription, Notification
 from App.main import create_app
 from App.controllers import (get_user, get_all_users_json, get_all_users,
                              get_user_by_username, initialize)
@@ -18,7 +20,8 @@ from App.controllers.admin import (
     admin_delete_area,
     admin_delete_street,
     admin_view_all_areas,
-    admin_view_all_streets
+    admin_view_all_streets,
+    admin_schedule_drive
 )
 from App.controllers.driver import (
     driver_schedule_drive,
@@ -33,7 +36,9 @@ from App.controllers.resident import (
     resident_request_stop,
     resident_cancel_stop,
     resident_view_inbox,
-    resident_view_driver_stats
+    resident_view_driver_stats,
+    resident_subscribe,
+    resident_unsubscribe
 )
 from App.controllers.user import (
     user_login,
@@ -573,3 +578,85 @@ def user_tests_command(type):
 
 
 app.cli.add_command(test)
+
+
+##### Pattern Demo
+
+@app.cli.command("list-streets")
+def list_streets():
+        if not display_table(Street.list(), ["id", "name", "areaId"], "Street Table"):
+            print("\nThere are currently no records in [Street]\n")
+
+
+@app.cli.command("list-street-subscriptions")
+def list_street_subscriptions():
+        if not display_table(StreetSubscription.list(), ["resident_id", "street_id"], "StreetSubscription Table"):
+            print("\nThere are currently no records in [StreetSubscription]\n")
+
+
+@app.cli.command("list-residents")
+def list_street_subscriptions():
+        if not display_table(Resident.list(), ["id", "houseNumber", "username"], "Resident Table"):
+            print("\nThere are currently no records in [Resident]\n")
+
+@app.cli.command("list-drivers")
+def list_street_subscriptions():
+        if not display_table(Driver.list(), ["id", "status", "username"], "Resident Table"):
+            print("\nThere are currently no records in [Driver]\n")
+
+@app.cli.command("list-admins")
+def list_street_subscriptions():
+        if not display_table(Admin.list(), ["id", "username"], "Admin Table"):
+            print("\nThere are currently no records in [Admin]\n") 
+
+@app.cli.command("list-notifications")
+def list_notifications():
+    if not display_table(Notification.list(), ["id", "message", "resident_id", "drive_id"], "Notification Table"):
+            print("\nThere are currently no records in [Notification]\n") 
+
+
+@app.cli.command("demo-observer")
+def demo_observer():
+    
+    print("\n")
+    print("=" * 60)
+    print("OBSERVER PATTERN DEMONSTRATION")
+    print("=" * 60)
+
+    print("\n[1] INITIAL STATE - Subscriptions")
+    print("-" * 60)
+    # Residents subscribe to street
+    alice = Resident.get_by_id(4)
+    jane = Resident.get_by_id(5)
+    john = Resident.get_by_id(6)
+
+    print(f'Subscribing {alice.username}(ID: {alice.id}) to street 1')
+    resident_subscribe(alice, 1)
+    print(f'Subscribing {jane.username}(ID: {jane.id}) to street 1')
+    resident_subscribe(jane, 1)
+    print(f'Subscribing {john.username}(ID: {john.id}) to street 1')
+    resident_subscribe(john, 1)
+    # Display Street Subscriptions
+    if not display_table(StreetSubscription.list(), ["resident_id", "street_id"], "Street Subscriptions"):
+        print("\nThere are currently no records in [StreetSubscription]\n")
+    # Display notifications initial state
+    if not display_table(Notification.list(), ["id", "message", "resident_id", "drive_id"], "Notification Table"):
+        print("\nThere are currently no records in [Notification]\n") 
+
+    # Admin schedules drive - triggers notifications
+    print("\n[2] TRIGGER EVENT - Admin schedules drive")
+    print("-" * 60)
+    mary = Driver.get_by_id(3)
+    drive = admin_schedule_drive(mary, 1, 1, "2025-12-31", "09:00", 1)
+    print(f'Admin - Mary(ID: {drive.driver.id}) scheduling drive . .')
+    print(f'Drive #{drive.id} scheduled to {drive.street.name}, {drive.street.area.name}')
+
+    print("\n\n>>> OBSERVER PATTERN ACTIVATED <<<")
+    print(f"Residents Notified . .")
+
+    print("\n\n[4] FINAL STATE - Notifications created")
+    print("-" * 60)
+    if not display_table(Notification.list(), ["id", "message", "resident_id", "drive_id"], "Notification Table"):
+        print("\nThere are currently no records in [Notification]\n") 
+
+

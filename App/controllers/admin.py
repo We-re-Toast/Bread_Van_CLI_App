@@ -1,4 +1,6 @@
 from App.models import Admin, Driver, Area, Street, Item
+from App.application.DriveNotifier import DriveNotifier
+from .driver import driver_schedule_drive
 from App.database import db
 
 # All admin-related business logic will be moved here as functions
@@ -73,3 +75,9 @@ def admin_view_all_streets():
 
 def admin_view_all_items():
      return Item.query.all()
+
+def admin_schedule_drive(driver, area_id, street_id, date_str, time_str, menu_id):
+    new_drive = driver_schedule_drive(driver, area_id, street_id, date_str, time_str, menu_id)
+    DriveNotifier().notify(new_drive)
+    return new_drive
+

@@ -29,6 +29,15 @@ class Driver(User):
         if streetId is not None:
             self.street_id = streetId
 
+    
+    def list():
+        return Driver.query.all()
+    
+
+    def get_by_id(id):
+        return Driver.query.get(id)
+
+
     def get_json(self):
         user_json = super().get_json()
         user_json['status'] = self.status
@@ -75,12 +84,6 @@ class Driver(User):
                           menu_id=menu_id,
                           status="Upcoming")
         db.session.add(new_drive)
-        db.session.commit()
-
-        from App.application.DriveNotifier import DriveNotifier # needs to update
-
-        DriveNotifier().notify(new_drive)
-        
         db.session.commit()
         return new_drive
 

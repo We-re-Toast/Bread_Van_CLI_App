@@ -18,6 +18,12 @@ class Admin(User):
     def __init__(self, username, password):
         super().__init__(username, password)
 
+    def list():
+        return Admin.query.all()
+    
+    def get_by_id(id):
+        return Admin.query.get(id)
+
     def get_json(self):
         user_json = super().get_json()
         return user_json
