@@ -19,6 +19,8 @@ from App.controllers.admin import (
 from App.controllers.driver import (
     driver_schedule_drive,
     driver_cancel_drive,
+    driver_update_eta,
+    driver_update_menu,
     driver_view_drives,
     driver_start_drive,
     driver_end_drive,
@@ -343,6 +345,32 @@ def view_requested_stops_command(driveId):
     for stop in stops:
         print(f"#{stop.resident.houseNumber} \tResident: {stop.resident.username}")
 
+@driver_cli.command("update_eta", help="Update drive arrival")
+@click.argument("drive_id")
+@click.argument("time")
+def update_eta(drive_id, time):
+    driver = require_driver()
+    if not driver:
+        return
+    
+    result = driver_update_eta(driver, drive_id, time)
+    if result:
+        print(f"Drive #{drive_id} ETA updated to {time}")
+    else:
+        print("ETA update failed")
+
+@driver_cli.command("update_menu", help="Update menu for a drive")
+@click.argument("drive_id")
+def update_menu_command(drive_id):
+    driver = require_driver()
+    if not driver:
+        return
+    
+    drive = driver_update_menu(driver, drive_id)
+    if drive:
+        print(f"Menu updated for drive #{drive_id}")
+    else:
+        print("Failed to update menu")
 
 app.cli.add_command(driver_cli)
 
