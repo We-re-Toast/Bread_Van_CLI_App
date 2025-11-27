@@ -23,6 +23,50 @@ This creates and initializes all accounts and tables.
   * jane / janepass
   * john / johnpass
 
+## 🏘 Default Areas & Streets
+
+St. Augustine
+
+Gordon Street
+
+Warner Street
+
+College Road
+
+Tunapuna
+
+Fairly Street
+
+Saint John Road
+
+San Juan (empty by default)
+
+## 🍞 Default Menu Items
+
+Bread Loaf
+
+Croissant
+
+Muffin
+
+Baguette
+
+Donut
+
+Bagel
+
+Sourdough Bread
+
+Cinnamon Roll
+
+Cheese Danish
+
+## 🚌 Default Drives & Stops
+
+Mary has an upcoming drive scheduled for St. Augustine → Warner Street
+
+Jane has already requested a stop on this drive
+
 ### Run any CLI command using:
 ```bash
 flask <group> <command> [args...]
@@ -65,26 +109,6 @@ flask admin create_driver <username> <password>
 flask admin delete_driver <driver_id>
 ```
 
-### Add Area
-```bash
-flask admin add_area <name>
-```
-
-### Add Street
-```bash
-flask admin add_street <area_id> <name>
-```
-
-### Delete Area
-```bash
-flask admin delete_area <area_id>
-```
-
-### Delete Street
-```bash
-flask admin delete_street <street_id>
-```
-
 ### View All Areas
 ```bash
 flask admin view_all_areas
@@ -95,6 +119,20 @@ flask admin view_all_areas
 flask admin view_all_streets
 ```
 
+### View All Menu Items
+```bash
+flask admin view_all_items
+```
+
+### Add a Menu Item
+```bash
+flask admin add_item <name> <price> <description> [tags]
+```
+
+### Delete a Menu Item
+```bash
+flask admin delete_item <item_id>
+```
 
 ## 🚐 Driver Commands | Group: flask driver
 Drivers manage drives and stops.
@@ -102,9 +140,9 @@ Drivers manage drives and stops.
 ```bash
 flask driver schedule_drive YYYY-MM-DD HH:MM
 ```
+
 Prompts to select area & street.
 Drives cannot be scheduled in the past nor more than 1 year ahead of the current date.
-
 
 ### Cancel Drive
 ```bash
