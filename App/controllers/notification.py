@@ -1,5 +1,5 @@
 from App import db
-from App.models import Notification, Subscription, Resident
+from App.models import Notification, Subscription, Resident, DriveItem
 from App.exceptions import ValidationError
 from datetime import datetime
 
@@ -13,9 +13,16 @@ def notify_subscribers(drive):
     # Format the message
     # Assuming drive.street is available via relationship
     street_name = drive.street.name if drive.street else "your street"
-    message = f"Bread Van scheduled for {street_name} on {drive.date} at {drive.time}."
+    message = f"Bread Van scheduled for {street_name} on {drive.date} at {drive.time} with the following items:"
     timestamp = datetime.now()
+    drive_items = DriveItem.query.filter_by(drive_id=drive.id).all()
 
+    if drive_items:
+        for drive_item in drive_items:
+            item = drive_item.item
+            message += f"\nItem: {item.name} - Quantity: {drive_item.quantity} - Price-Per-Item: ${item.price}"
+    else:
+        message += "\nNo items scheduled for this drive."
     for sub in subscriptions:
         notification = Notification(
             resident_id=sub.resident_id, message=message, timestamp=timestamp
