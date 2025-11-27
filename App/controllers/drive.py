@@ -11,7 +11,7 @@ from App.utils.validation import validate_date, validate_time
 from datetime import datetime
 
 
-def create_drive(driver_id, area_id, street_id, date, time, status):
+def create_drive(driver_id, area_id, street_id, date, time, status, items=None):
     # Validation
     if not validate_date(str(date)):
         raise ValidationError("Invalid date format")
@@ -34,6 +34,10 @@ def create_drive(driver_id, area_id, street_id, date, time, status):
     )
     db.session.add(new_drive)
     db.session.commit()
+
+    if items:
+        for item in items:
+            add_drive_item(new_drive.id, item["item_id"], item["quantity"])
 
     # Notify subscribers (Observer Pattern)
     notify_subscribers(new_drive)
@@ -100,7 +104,9 @@ def get_drive_items(drive_id):
     return [item.get_json() for item in drive.items]
 
 
-def schedule_drive(driver_id, area_id, street_id, date_str, time_str, status):
+def schedule_drive(
+    driver_id, area_id, street_id, date_str, time_str, status, items=None
+):
     driver = Driver.query.get(driver_id)
     street = Street.query.filter_by(id=street_id, area_id=area_id).first()
 
@@ -140,6 +146,10 @@ def schedule_drive(driver_id, area_id, street_id, date_str, time_str, status):
     db.session.add(new_drive)
     db.session.commit()
 
+    if items:
+        for item in items:
+            add_drive_item(new_drive.id, item["item_id"], item["quantity"])
+
     # Notify subscribers (Observer Pattern)
     notify_subscribers(new_drive)
 
@@ -167,6 +177,10 @@ def complete_drive(driver_id, drive_id):
     drive = Drive.query.filter_by(driver_id=driver_id, id=drive_id).first()
     if not drive:
         raise ResourceNotFound(f"Drive with ID '{drive_id}' does not exist")
+    drive.status = DriveStatus.COMPLETED
+    db.session.commit()
+    return drive
+
     drive.status = DriveStatus.COMPLETED
     db.session.commit()
     return drive
