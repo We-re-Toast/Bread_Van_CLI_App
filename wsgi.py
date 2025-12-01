@@ -333,6 +333,27 @@ def schedule_drive_command(date_str, time_str):
         print(f"\nDrive scheduled for {date_str} at {time_str} on {chosen_street.name}, {chosen_area.name}")
     except ValueError as e:
         print(str(e))
+@driver_cli.command("view_subscribers", help="View residents subscribed to this driver")
+def view_subscribers_command():
+    driver = require_driver()
+    if not driver:
+        return
+
+    from App.models.resident import Resident
+    residents = Resident.query.all()
+
+    subs = [r for r in residents if driver.id in r.subscriptions]
+
+    if not subs:
+        print("No residents are subscribed to you.")
+        return
+
+    print("\nResidents Subscribed To You:")
+    print("-" * 50)
+    for r in subs:
+        area = Area.query.get(r.areaId)
+        street = Street.query.get(r.streetId)
+        print(f"{r.username} | Area: {area.name} | Street: {street.name} | House #{r.houseNumber}")
 
 @driver_cli.command("cancel_drive", help="Cancel a drive")
 @click.argument("drive_id", type=int)
@@ -483,11 +504,92 @@ def view_inbox_command():
         return
     inbox = resident_view_inbox(resident)
     if inbox:
-        print("Inbox Notifications:")
-        for notif in inbox:
-            print(notif)
+        print("\nYour Notifications:")
+        print("-" * 50)
+        for i, notif in enumerate(inbox, start=1):
+            print(f"{i}. {notif}")
+        print("\n")
     else:
         print("Your inbox is empty.")
+
+@resident_cli.command("list_drivers", help="List all drivers available to subscribe")
+def list_drivers_command():
+    resident = require_resident()
+    if not resident:
+        return
+
+    drivers = Driver.query.all()
+    if not drivers:
+        print("No drivers available.")
+        return
+
+    print("\nAvailable Drivers:")
+    print("-" * 50)
+    print(f"{'Driver ID':<10} {'Name':<20} {'Status':<15}")
+    print("-" * 50)
+    for driver in drivers:
+        print(f"{driver.id:<10} {driver.username:<20} {driver.status:<15}")
+    print("\n")
+
+@resident_cli.command("subscribe", help="Subscribe to a driver's notifications")
+@click.argument("driver_id", type=int)
+def subscribe_command(driver_id):
+    resident = require_resident()
+    if not resident:
+        return
+
+    driver = Driver.query.get(driver_id)
+    if not driver:
+        print(f"Driver with ID {driver_id} does not exist.")
+        return
+
+    if driver_id in resident.subscriptions:
+        print(f"You are already subscribed to Driver {driver.username} (ID: {driver.id}).")
+        return
+
+    resident.subscribe(driver_id)
+    print(f"You are now subscribed to Driver {driver.username} (ID: {driver.id}).")
+
+
+
+@resident_cli.command("unsubscribe", help="Unsubscribe from a driver's notifications")
+@click.argument("driver_id", type=int)
+def unsubscribe_command(driver_id):
+    resident = require_resident()
+    if not resident:
+        return
+
+    driver = Driver.query.get(driver_id)
+    if not driver:
+        print(f"Driver with ID {driver_id} does not exist.")
+        return
+
+    if driver_id not in resident.subscriptions:
+        print(f"You are not subscribed to Driver {driver.username} (ID: {driver.id}).")
+        return
+
+    resident.unsubscribe(driver_id)
+    print(f"You have unsubscribed from Driver {driver.username} (ID: {driver.id}).")
+
+@resident_cli.command("my_subscriptions", help="List all drivers you are subscribed to")
+def my_subscriptions_command():
+    resident = require_resident()
+    if not resident:
+        return
+
+    if not resident.subscriptions:
+        print("You are not subscribed to any drivers.")
+        return
+
+    print("\nYour Subscriptions:")
+    print("-" * 50)
+    print(f"{'Driver ID':<10} {'Name':<20} {'Status':<15}")
+    print("-" * 50)
+    for driver_id in resident.subscriptions:
+        driver = Driver.query.get(driver_id)
+        if driver:
+            print(f"{driver.id:<10} {driver.username:<20} {driver.status:<15}")
+    print("\n")
 
 @resident_cli.command("view_driver_stats", help="View the status and location of a driver")
 @click.argument("driver_id")

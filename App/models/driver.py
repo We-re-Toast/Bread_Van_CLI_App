@@ -33,18 +33,22 @@ class Driver(User):
         user_json['streetId'] = self.streetId
         return user_json
 
-    def add_observer(self, observer):
+    def add_observer(self, resident):
+        if resident.id not in self.observers:
+            self.observers.append(resident.id)
+            db.session.commit()
 
-        pass
+    def remove_observer(self, resident):
+        if resident.id in self.observers:
+            self.observers.remove(resident.id)
+            db.session.commit()
 
-    def remove_observer(self, observer):
-        pass 
-
-    def notify_observers(self, message: str):
-        """Notify all residents on the driver's street."""
-        if self.street:
-            for resident in self.street.residents:
+    def notify_observers(self, message):
+        from App.models.resident import Resident
+        for resident in Resident.query.all():
+            if resident.areaId == self.areaId and self.id in resident.subscriptions:
                 resident.update(self, message)
+
     def login(self, password):
         if super().login(password):
             self.areaId = 0
@@ -78,13 +82,10 @@ class Driver(User):
         db.session.add(new_drive)
         db.session.commit()
 
-        street = Street.query.get(streetId)
-        if street:
-            for resident in street.residents:
-                resident.receive_notif(
-                    f"SCHEDULED>> Drive {new_drive.id} by Driver {self.id} on {date} at {time}"
-                )
-            db.session.commit()
+        self.notify_observers(
+            f"Drive {new_drive.id} scheduled in Area {areaId} on {date} at {time}"
+        )
+        db.session.commit()
         return (new_drive)
 
     def cancel_drive(self, driveId):

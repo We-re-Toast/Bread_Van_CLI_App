@@ -169,3 +169,11 @@ flask resident view_driver_stats <driver_id>
 
 
 General user commands (login/logout/view_street_drives) are available to all.
+
+
+
+New commands
+flask resident list_drivers
+flask resident subscribe 2
+flask resident unsubscribe 2
+flask resident my_subscriptions
