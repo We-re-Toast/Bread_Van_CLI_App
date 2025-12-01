@@ -1,3 +1,4 @@
+# App/models/driver_stock.py
 from App.database import db
 
 class DriverStock(db.Model):

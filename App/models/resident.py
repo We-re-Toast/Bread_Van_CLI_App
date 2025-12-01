@@ -1,3 +1,4 @@
+# App/models/resident.py
 from datetime import datetime
 from sqlalchemy.ext.mutable import MutableList
 from sqlalchemy import JSON
@@ -6,13 +7,13 @@ from App.database import db
 from .user import User
 from .driver import Driver
 from .stop import Stop
-from models.observer import Observer   
+  
 
 
 MAX_INBOX_SIZE = 20
 
 
-class Resident(User, Observer):  
+class Resident(User):  
     __tablename__ = "resident"
 
     id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)

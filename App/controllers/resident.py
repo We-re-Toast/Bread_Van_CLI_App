@@ -1,3 +1,4 @@
+# App/controllers/resident.py
 from App.models import Resident, Stop, Drive, Area, Street, DriverStock
 from App.database import db
 
