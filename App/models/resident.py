@@ -21,6 +21,7 @@ class Resident(User):
     streetId = db.Column(db.Integer, db.ForeignKey('street.id'), nullable=False)
     houseNumber = db.Column(db.Integer, nullable=False)
     inbox = db.Column(MutableList.as_mutable(JSON), default=[])
+    subscriptions = db.Column(MutableList.as_mutable(JSON), default=[])
 
     area = db.relationship("Area", backref='residents')
     street = db.relationship("Street", backref='residents')
@@ -37,6 +38,16 @@ class Resident(User):
     def update(self, subject, message: str):
         """Called when driver (subject) pushes updates"""
         self.receive_notif(message)
+
+    def subscribe(self, driver_id):
+        if driver_id not in self.subscriptions:
+            self.subscriptions.append(driver_id)
+            db.session.commit()
+
+    def unsubscribe(self, driver_id):
+        if driver_id in self.subscriptions:
+            self.subscriptions.remove(driver_id)
+            db.session.commit()
 
     def receive_notif(self, message):
         if self.inbox is None:
