@@ -1,11 +1,11 @@
+# App/models/driver.py
 from App.database import db
 from datetime import datetime
 from .user import User
 from .drive import Drive
 from .street import Street
-from models.subject import Subject
 
-class Driver(User, Subject):
+class Driver(User):
     __tablename__ = "driver"
 
     id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)

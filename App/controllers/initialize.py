@@ -1,3 +1,4 @@
+# App/controllers/initialize.py
 from App.database import db
 from App.models import Admin, Driver, Resident, Area, Street
 
