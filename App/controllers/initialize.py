@@ -70,7 +70,10 @@ def initialize():
     db.session.commit()
 
     #Creating Drives and Stops
-    driver2.schedule_drive(area1.id, street12.id, "2025-10-26", "10:00")
+    driver2.schedule_drive(area1.id, street11.id, "2025-10-26", "10:00")
+    db.session.commit()
+
+    driver1.schedule_drive(area2.id, street21.id, "2025-10-27", "11:00")
     db.session.commit()
                      
     resident2.request_stop(0)
