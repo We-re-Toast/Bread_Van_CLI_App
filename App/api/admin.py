@@ -128,3 +128,24 @@ def list_streets():
     streets = admin_controller.admin_view_all_streets()
     items = [s.get_json() if hasattr(s, "get_json") else s for s in streets]
     return jsonify({"items": items}), 200
+
+@bp.post("/items")
+@jwt_required()
+@role_required("Admin")
+def add_item():
+    data = request.get_json() or {}
+    name = data.get("name")
+    price = data.get("price")
+    description = data.get("description")
+    tags = data.get("tags", "")
+
+    if not name or price is None:
+        return jsonify({"error": {"code": "validation_error", "message": "name and price required"}}), 422
+    
+    try:
+        item = admin_controller.admin_add_item(name, price, description, tags)
+    except Exception as e:
+        return jsonify({"error": {"code": "conflict", "message": str(e)}}), 409
+    
+    return jsonify(item.get_json() if hasattr(item, "get_json") else item.__dict__), 201
+
