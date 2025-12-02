@@ -149,3 +149,12 @@ def add_item():
     
     return jsonify(item.get_json() if hasattr(item, "get_json") else item.__dict__), 201
 
+@bp.delete("/items/<int:item_id>")
+@jwt_required()
+@role_required("Admin")
+def delete_item(item_id):
+    try:
+        admin_controller.admin_delete_item(item_id)
+    except ValueError as e:
+        return jsonify({"error": {"code": "resource_not_found", "message": str(e)}}), 404
+    return "", 204
