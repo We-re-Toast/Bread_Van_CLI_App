@@ -1,6 +1,6 @@
 # App/controllers/initialize.py
 from App.database import db
-from App.models import Admin, Driver, Resident, Area, Street
+from App.models import Admin, Driver, Resident, Area, Street, DriverStock
 
 
 def initialize():
@@ -67,6 +67,11 @@ def initialize():
                          streetId=street21.id,
                          houseNumber=13)
     db.session.add_all([resident1, resident2, resident3])
+    db.session.commit()
+
+    stock1 = DriverStock(driverId=1, itemId=1, itemName="Bread", quantity=50)
+    stock2 = DriverStock(driverId=2, itemId=2, itemName="Rolls", quantity=20)
+    db.session.add_all([stock1, stock2])
     db.session.commit()
 
     #Creating Drives and Stops

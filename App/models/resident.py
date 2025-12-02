@@ -36,7 +36,6 @@ class Resident(User):
         self.houseNumber = houseNumber
 
     def update(self, subject, message: str):
-        """Called when driver (subject) pushes updates"""
         self.receive_notif(message)
 
     def subscribe(self, driver_id):
