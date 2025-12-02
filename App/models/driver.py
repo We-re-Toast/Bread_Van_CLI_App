@@ -45,9 +45,21 @@ class Driver(User):
 
     def notify_observers(self, message):
         from App.models.resident import Resident
+        from App.models.driver_stock import DriverStock
+
+        # Get items for this driver
+        stocks = DriverStock.query.filter_by(driverId=self.id).all()
+        if stocks:
+            items_str = ", ".join([f"{s.itemName}({s.quantity})" for s in stocks])
+            message = f"{message} | Available items: {items_str}"
+        else:
+            message = f"{message} | Available items: None"
+
+        # Notify residents already subscribed (your original logic)
         for resident in Resident.query.all():
             if resident.areaId == self.areaId and self.id in resident.subscriptions:
                 resident.update(self, message)
+
 
     def login(self, password):
         if super().login(password):
@@ -82,9 +94,8 @@ class Driver(User):
         db.session.add(new_drive)
         db.session.commit()
 
-        self.notify_observers(
-            f"Drive {new_drive.id} scheduled in Area {areaId} on {date} at {time}"
-        )
+        msg = f"Drive {new_drive.id} scheduled in Area {areaId} on {date} at {time}"
+        self.notify_observers(msg)
         db.session.commit()
         return (new_drive)
 
