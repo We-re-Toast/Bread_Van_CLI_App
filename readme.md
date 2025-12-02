@@ -177,3 +177,5 @@ flask resident list_drivers
 flask resident subscribe 2
 flask resident unsubscribe 2
 flask resident my_subscriptions
+below now wholes history
+flask resident view_inbox
