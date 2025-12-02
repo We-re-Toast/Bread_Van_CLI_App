@@ -1,5 +1,5 @@
 from App.database import db
-from App.models import Admin, Driver, Resident, Area, Street, Item
+from App.models import Admin, Driver, Resident, Area, Street, Item, Notification
 
 
 def initialize():

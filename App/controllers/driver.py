@@ -32,12 +32,11 @@ def driver_schedule_drive(driver, area_id, street_id, date_str, time_str):
     message = f"A route is scheduled for your neighborhood. \nETA: {eta}\n\n{menu_text}"
 
     for resident in residents:
-        create_notification(user_id=resident.id, message=message, driver_id=driver.id)
-    
+        create_notification(resident_id=resident.id, message=message, driver_id=driver.id)
     return new_drive
 
 def driver_cancel_drive(driver, drive_id):
-    return driver.cancel_drive(drive_id)
+        return driver.cancel_drive(drive_id)
 
 def driver_view_drives(driver):
     return [d for d in driver.view_drives() if d.status in ("Upcoming", "In Progress")]
