@@ -1,3 +1,4 @@
+# App/controllers/__init__.py
 from .auth import *
 from .initialize import *
 

@@ -1,3 +1,4 @@
+# App/models/resident.py
 from datetime import datetime
 from sqlalchemy.ext.mutable import MutableList
 from sqlalchemy import JSON
@@ -6,13 +7,13 @@ from App.database import db
 from .user import User
 from .driver import Driver
 from .stop import Stop
-from models.observer import Observer   
+  
 
 
 MAX_INBOX_SIZE = 20
 
 
-class Resident(User, Observer):  
+class Resident(User):  
     __tablename__ = "resident"
 
     id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
@@ -20,6 +21,7 @@ class Resident(User, Observer):
     streetId = db.Column(db.Integer, db.ForeignKey('street.id'), nullable=False)
     houseNumber = db.Column(db.Integer, nullable=False)
     inbox = db.Column(MutableList.as_mutable(JSON), default=[])
+    subscriptions = db.Column(MutableList.as_mutable(JSON), default=[])
 
     area = db.relationship("Area", backref='residents')
     street = db.relationship("Street", backref='residents')
@@ -36,6 +38,16 @@ class Resident(User, Observer):
     def update(self, subject, message: str):
         """Called when driver (subject) pushes updates"""
         self.receive_notif(message)
+
+    def subscribe(self, driver_id):
+        if driver_id not in self.subscriptions:
+            self.subscriptions.append(driver_id)
+            db.session.commit()
+
+    def unsubscribe(self, driver_id):
+        if driver_id in self.subscriptions:
+            self.subscriptions.remove(driver_id)
+            db.session.commit()
 
     def receive_notif(self, message):
         if self.inbox is None:
