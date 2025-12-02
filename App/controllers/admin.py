@@ -20,43 +20,11 @@ def admin_delete_driver(driver_id):
     db.session.commit()
     return driver
 
-def admin_add_area(name):
-    area = Area(name=name)
-    db.session.add(area)
-    db.session.commit()
-    return area
-
-def admin_add_street(area_id, name):
-    area = Area.query.get(area_id)
-    if not area:
-        raise ValueError("Invalid area ID.")
-    street = Street(name=name, areaId=area_id)
-    db.session.add(street)
-    db.session.commit()
-    return street
-
 def admin_add_item(name, price, description, tags):
     item = Item(name=name, price=price, description=description, tags=tags)
     db.session.add(item)
     db.session.commit()
     return item
-
-def admin_delete_area(area_id):
-    area = Area.query.get(area_id)
-    if not area:
-        raise ValueError("Invalid area ID.")
-    db.session.delete(area)
-    db.session.commit()
-
-def admin_delete_street(area_id, street_id):
-    area = Area.query.get(area_id)
-    if not area:
-        raise ValueError("Invalid area ID.")
-    street = Street.query.filter_by(areaId=area_id).get(street_id)
-    if not street:
-        raise ValueError("Invalid street ID.")
-    db.session.delete(street)
-    db.session.commit()
 
 def admin_delete_item(item_id):
     item = Item.query.get(item_id)

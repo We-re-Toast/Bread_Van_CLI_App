@@ -86,16 +86,20 @@ def signup_api():
     if not username or not password:
         return jsonify({'error': {'code': 'validation_error', 'message': 'username and password required'}}), 422
 
-    if role == 'resident':
-        area_id = data.get('area_id')
-        street_id = data.get('street_id')
-        house_number = data.get('house_number')
-        if area_id is None or street_id is None or house_number is None:
-            return jsonify({'error': {'code': 'validation_error', 'message': 'area_id, street_id and house_number required for resident'}}), 422
-        resident = resident_controller.resident_create(username, password, area_id, street_id, house_number)
-        out = resident.get_json() if hasattr(resident, 'get_json') else {'id': resident.id}
-        return jsonify(out), 201
-    else:
-        user = create_user(username, password)
-        out = user.get_json() if hasattr(user, 'get_json') else {'id': user.id}
-        return jsonify(out), 201
+    
+    try:
+        if role == 'resident':
+            area_id = data.get('area_id')
+            street_id = data.get('street_id')
+            house_number = data.get('house_number')
+            if area_id is None or street_id is None or house_number is None:
+                return jsonify({'error': {'code': 'validation_error', 'message': 'area_id, street_id and house_number required for resident'}}), 422
+            resident = resident_controller.resident_create(username, password, area_id, street_id, house_number)
+            out = resident.get_json() if hasattr(resident, 'get_json') else {'id': resident.id}
+            return jsonify(out), 201
+        else:
+            user = create_user(username, password)
+            out = user.get_json() if hasattr(user, 'get_json') else {'id': user.id}
+            return jsonify(out), 201
+    except Exception as e:
+        return jsonify({'Error': 'user cannot be created'}), 400
