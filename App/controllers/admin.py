@@ -55,3 +55,20 @@ def admin_delete_area(area_id):
     db.session.delete(area)
     db.session.commit()
     return area
+
+def admin_add_street(area_id, name):
+    area = Area.query.get(area_id)
+    if not area:
+        raise ValueError("Invalid area ID.")
+    street = Street(name=name, areaId=area_id)
+    db.session.add(street)
+    db.session.commit()
+    return street
+
+def admin_delete_street(street_id):
+    street = Street.query.get(street_id)
+    if not street:
+        raise ValueError("Invalid street ID.")
+    db.session.delete(street)
+    db.session.commit()
+    return street

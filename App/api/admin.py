@@ -62,13 +62,15 @@ def delete_area(area_id):
 @role_required("Admin")
 def create_street():
     data = request.get_json() or {}
-    name = data.get("name")
     area_id = data.get("area_id")
-    if not name or not area_id:
-        return jsonify({"error": {"code": "validation_error", "message": "name and area_id required"}}), 422
-    street = admin_controller.admin_add_street(area_id, name)
-    out = street.get_json() if hasattr(street, "get_json") else street
-    return jsonify(out), 201
+    name = data.get("name")
+    if not area_id or not name:
+        return jsonify({"error": {"code": "validation_error", "message": "area_id and name required"}}), 422
+    try:
+        street = admin_controller.admin_add_street(area_id, name)
+    except ValueError as e:
+        return jsonify({"error": {"code": "resource_not_found", "message": str(e)}}), 404
+    return jsonify(street.get_json()), 201
 
 
 @bp.delete("/streets/<int:street_id>")
