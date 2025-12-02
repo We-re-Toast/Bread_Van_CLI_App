@@ -158,3 +158,10 @@ def delete_item(item_id):
     except ValueError as e:
         return jsonify({"error": {"code": "resource_not_found", "message": str(e)}}), 404
     return "", 204
+
+@bp.get("/items")
+@jwt_required()
+@role_required("Admin")
+def view_all_items():
+    items = admin_controller.admin_view_all_items()
+    return jsonify({"items": [i.get_json() if hasattr(i, "get_json") else i.__dict__ for i in items]}), 200
