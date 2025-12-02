@@ -41,3 +41,17 @@ def admin_view_all_streets():
 
 def admin_view_all_items():
      return Item.query.all()
+
+def admin_add_area(name):
+    area = Area(name=name)
+    db.session.add(area)
+    db.session.commit()
+    return area
+
+def admin_delete_area(area_id):
+    area = Area.query.get(area_id)
+    if not area:
+        raise ValueError("Invalid area ID.")
+    db.session.delete(area)
+    db.session.commit()
+    return area

@@ -7,17 +7,6 @@ from App.controllers import admin as admin_controller
 bp = Blueprint("api_admin", __name__, url_prefix="/admin")
 
 
-@bp.get("/users")
-@jwt_required()
-@role_required("Admin")
-def list_users():
-    role = request.args.get("role")
-    users = admin_controller.admin_view_all_areas() if role == "area" else []
-    # best-effort: call user listing from admin controller if exists
-    users = [u.get_json() if hasattr(u, "get_json") else u for u in users]
-    return jsonify({"items": users}), 200
-
-
 @bp.post("/drivers")
 @jwt_required()
 @role_required("Admin")
@@ -45,24 +34,6 @@ def delete_driver(driver_id):
         return jsonify({"error": {"code": "resource_not_found", "message": str(e)}}), 404
     return "", 204
 
-
-@bp.post("/residents")
-@jwt_required()
-@role_required("Admin")
-def create_resident():
-    data = request.get_json() or {}
-    username = data.get("username")
-    password = data.get("password")
-    area_id = data.get("area_id")
-    street_id = data.get("street_id")
-    house_number = data.get("house_number")
-    if not username or not password:
-        return jsonify({"error": {"code": "validation_error", "message": "username and password required"}}), 422
-    resident = admin_controller.admin_create_driver(username, password)  # fallback to create
-    out = resident.get_json() if hasattr(resident, "get_json") else resident
-    return jsonify(out), 201
-
-
 @bp.post("/areas")
 @jwt_required()
 @role_required("Admin")
@@ -72,8 +43,7 @@ def create_area():
     if not name:
         return jsonify({"error": {"code": "validation_error", "message": "name required"}}), 422
     area = admin_controller.admin_add_area(name)
-    out = area.get_json() if hasattr(area, "get_json") else area
-    return jsonify(out), 201
+    return jsonify(area.get_json()), 201
 
 
 @bp.delete("/areas/<int:area_id>")
