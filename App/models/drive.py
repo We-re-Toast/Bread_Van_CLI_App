@@ -1,4 +1,5 @@
 from App.database import db
+from App.models import DriverStock
 
 class Drive(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -30,3 +31,29 @@ class Drive(db.Model):
             'time': self.time.strftime("%H:%M:%S") if self.time else None,
             'status': self.status
         }
+
+    def set_menu(self):
+        stock_items = DriverStock.query.filter_by(driverId=self.driverId).all()
+        
+        print("\nYour Stock:")
+        for item in stock_items:
+            print(f"ID: {item.id} Name: {item.name}: {item.quantity} available")
+        
+        menu = []
+        while True:
+            print(f"\nCurrent menu: {menu}")
+            item_name = input("Enter item id (or '-1' to finish): ")
+            if item_name.lower() == '-1':
+                break
+                
+            quantity = input("Enter quantity: ")
+            if item_name and quantity:
+                menu.append(f"{item_name} x{quantity}")
+            else:
+                print("Please enter both item name and quantity")
+        
+        self.menu = ", ".join(menu)
+        db.session.commit()
+        
+        print(f"Final menu: {self.menu}")
+        return self.menu

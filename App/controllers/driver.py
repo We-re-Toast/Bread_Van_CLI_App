@@ -78,8 +78,31 @@ def driver_update_stock(driver, item_id, quantity):
 def driver_view_stock(driver):
     stocks = DriverStock.query.filter_by(driverId=driver.id).all() 
     return stocks
-    
-    
+
 def notify_residents(self, residents, message):
     for resident in residents:
         create_notification(user_id=resident.id, message=message, driver_id=self.id)
+
+def driver_update_eta(driver, drive_id, eta_str):
+    drive = Drive.query.get(drive_id)
+    if not drive or drive.driverId != driver.id:
+        raise ValueError("Drive not found or you don't have permission.")
+
+    try:
+        eta_time = datetime.strptime(eta_str, "%H:%M").time()
+    except ValueError:
+        raise ValueError("Invalid time. Use HH:MM format.")
+    
+    drive.time = eta_time
+    db.session.commit()
+
+    return drive
+    
+def driver_update_menu(driver, drive_id):
+    drive = Drive.query.get(drive_id)
+    if not drive:
+        raise ValueError("Drive not found")
+    if drive.driverId != driver.id:
+        raise ValueError(f"Not assigned to Drive {drive_id}")
+    drive.set_menu()
+    return drive
