@@ -33,10 +33,14 @@ def create_driver():
     return jsonify(out), 201
 
 
-@admin_views.route('/admin/drivers/<int:driver_id>', methods=['DELETE'])
+@admin_views.route('/admin/drivers', methods=['DELETE'])
 @jwt_required()
 @role_required('Admin')
-def delete_driver(driver_id):
+def delete_driver():
+    data = request.get_json() or {}
+    driver_id = data.get('driver_id')
+    if driver_id is None:
+        return jsonify({'error': {'code': 'validation_error', 'message': 'driver_id required'}}), 422
     admin_controller.admin_delete_driver(driver_id)
     return '', 204
 
@@ -73,10 +77,14 @@ def create_area():
     return jsonify(out), 201
 
 
-@admin_views.route('/admin/areas/<int:area_id>', methods=['DELETE'])
+@admin_views.route('/admin/areas', methods=['DELETE'])
 @jwt_required()
 @role_required('Admin')
-def delete_area(area_id):
+def delete_area():
+    data = request.get_json() or {}
+    area_id = data.get('area_id')
+    if area_id is None:
+        return jsonify({'error': {'code': 'validation_error', 'message': 'area_id required'}}), 422
     admin_controller.admin_delete_area(area_id)
     return '', 204
 
@@ -95,10 +103,15 @@ def create_street():
     return jsonify(out), 201
 
 
-@admin_views.route('/admin/streets/<int:area_id>/<int:street_id>', methods=['DELETE'])
+@admin_views.route('/admin/streets', methods=['DELETE'])
 @jwt_required()
 @role_required('Admin')
-def delete_street(area_id, street_id):
+def delete_street():
+    data = request.get_json() or {}
+    area_id = data.get('area_id')
+    street_id = data.get('street_id')
+    if area_id is None or street_id is None:
+        return jsonify({'error': {'code': 'validation_error', 'message': 'area_id and street_id required'}}), 422
     admin_controller.admin_delete_street(area_id, street_id)
     return '', 204
 

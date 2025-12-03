@@ -32,13 +32,17 @@ def create_stop():
     return jsonify(out), 201
 
 
-@resident_views.route('/resident/stops/<int:stop_id>', methods=['DELETE'])
+@resident_views.route('/resident/stops', methods=['DELETE'])
 @jwt_required()
 @role_required('Resident')
-def delete_stop(stop_id):
+def delete_stop():
+    data = request.get_json() or {}
+    drive_id = data.get('drive_id')
+    if drive_id is None:
+        return jsonify({'error': {'code': 'validation_error', 'message': 'drive_id required'}}), 422
     uid = current_user_id()
     resident = user_controller.get_user(uid)
-    resident_controller.resident_cancel_stop(resident, stop_id)
+    resident_controller.resident_cancel_stop(resident, drive_id)
     return '', 204
 
 
@@ -53,12 +57,12 @@ def inbox():
     return jsonify({'items': items}), 200
 
 
-@resident_views.route('/resident/driver-stats', methods=['GET'])
+@resident_views.route('/resident/driver-stats', methods=['POST'])
 @jwt_required()
 @role_required('Resident')
 def driver_stats():
-    params = request.args
-    driver_id = params.get('driver_id')
+    data = request.get_json() or {}
+    driver_id = data.get('driver_id')
     if not driver_id:
         return jsonify({'error': {'code': 'validation_error', 'message': 'driver_id is required'}}), 422
     uid = current_user_id()
@@ -93,10 +97,14 @@ def subscribe():
     return jsonify({'message': 'subscribed', 'driver_id': int(driver_id)}), 201
 
 
-@resident_views.route('/resident/subscriptions/<int:driver_id>', methods=['DELETE'])
+@resident_views.route('/resident/subscriptions', methods=['DELETE'])
 @jwt_required()
 @role_required('Resident')
-def unsubscribe(driver_id):
+def unsubscribe():
+    data = request.get_json() or {}
+    driver_id = data.get('driver_id')
+    if driver_id is None:
+        return jsonify({'error': {'code': 'validation_error', 'message': 'driver_id required'}}), 422
     uid = current_user_id()
     resident = user_controller.get_user(uid)
     if resident is None:

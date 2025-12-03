@@ -54,40 +54,53 @@ def create_drive():
     return jsonify(out), 201
 
 
-@driver_views.route('/driver/drives/<int:drive_id>/start', methods=['POST'])
+@driver_views.route('/driver/drives/start', methods=['POST'])
 @jwt_required()
 @role_required('Driver')
-def start_drive(drive_id):
+def start_drive():
+    data = request.get_json() or {}
+    drive_id = data.get('drive_id')
+    if drive_id is None:
+        return jsonify({'error': {'code': 'validation_error', 'message': 'drive_id required'}}), 422
     uid = current_user_id()
     driver = user_controller.get_user(uid)
     driver_controller.driver_start_drive(driver, drive_id)
     return jsonify({'id': drive_id, 'status': 'started'}), 200
 
 
-@driver_views.route('/driver/drives/<int:drive_id>/end', methods=['POST'])
+@driver_views.route('/driver/drives/end', methods=['POST'])
 @jwt_required()
 @role_required('Driver')
-def end_drive(drive_id):
+def end_drive():
+    # end the current in-progress drive for this driver
     uid = current_user_id()
     driver = user_controller.get_user(uid)
     res = driver_controller.driver_end_drive(driver)
-    return jsonify({'id': getattr(res, 'id', drive_id), 'status': 'ended'}), 200
+    return jsonify({'id': getattr(res, 'id', None), 'status': 'ended'}), 200
 
 
-@driver_views.route('/driver/drives/<int:drive_id>/cancel', methods=['POST'])
+@driver_views.route('/driver/drives/cancel', methods=['POST'])
 @jwt_required()
 @role_required('Driver')
-def cancel_drive(drive_id):
+def cancel_drive():
+    data = request.get_json() or {}
+    drive_id = data.get('drive_id')
+    if drive_id is None:
+        return jsonify({'error': {'code': 'validation_error', 'message': 'drive_id required'}}), 422
     uid = current_user_id()
     driver = user_controller.get_user(uid)
     driver_controller.driver_cancel_drive(driver, drive_id)
     return jsonify({'id': drive_id, 'status': 'cancelled'}), 200
 
 
-@driver_views.route('/driver/drives/<int:drive_id>/requested-stops', methods=['GET'])
+@driver_views.route('/driver/drives/requested-stops', methods=['POST'])
 @jwt_required()
 @role_required('Driver')
-def requested_stops(drive_id):
+def requested_stops():
+    data = request.get_json() or {}
+    drive_id = data.get('drive_id')
+    if drive_id is None:
+        return jsonify({'error': {'code': 'validation_error', 'message': 'drive_id required'}}), 422
     uid = current_user_id()
     driver = user_controller.get_user(uid)
     stops = driver_controller.driver_view_requested_stops(driver, drive_id)
@@ -125,14 +138,15 @@ def create_or_update_stock():
     return jsonify(out), 201
 
 
-@driver_views.route('/driver/stock/<int:stock_id>', methods=['PATCH'])
+@driver_views.route('/driver/stock', methods=['PATCH'])
 @jwt_required()
 @role_required('Driver')
-def patch_stock(stock_id):
+def patch_stock():
     data = request.get_json() or {}
+    stock_id = data.get('stock_id')
     quantity = data.get('quantity')
-    if quantity is None:
-        return jsonify({'error': {'code': 'validation_error', 'message': 'quantity required'}}), 422
+    if stock_id is None or quantity is None:
+        return jsonify({'error': {'code': 'validation_error', 'message': 'stock_id and quantity required'}}), 422
     uid = current_user_id()
     driver = user_controller.get_user(uid)
     stock = DriverStock.query.get(stock_id)
@@ -147,10 +161,14 @@ def patch_stock(stock_id):
     return jsonify(stock.get_json() if hasattr(stock, 'get_json') else {'id': stock.id, 'quantity': stock.quantity}), 200
 
 
-@driver_views.route('/driver/stock/<int:stock_id>', methods=['DELETE'])
+@driver_views.route('/driver/stock', methods=['DELETE'])
 @jwt_required()
 @role_required('Driver')
-def delete_stock(stock_id):
+def delete_stock():
+    data = request.get_json() or {}
+    stock_id = data.get('stock_id')
+    if stock_id is None:
+        return jsonify({'error': {'code': 'validation_error', 'message': 'stock_id required'}}), 422
     uid = current_user_id()
     driver = user_controller.get_user(uid)
     stock = DriverStock.query.get(stock_id)
