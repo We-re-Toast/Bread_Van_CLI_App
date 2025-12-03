@@ -12,15 +12,14 @@ from App.controllers import resident as resident_controller
 
 auth_views = Blueprint('auth_views', __name__, template_folder='../templates')
 
+
 @auth_views.route('/api/login', methods=['POST'])
 def user_login_api():
-  data = request.json
-  token = login(data['username'], data['password'])
-  if not token:
-    return jsonify(message='bad username or password given'), 401
-  response = jsonify(access_token=token) 
-  set_access_cookies(response, token)
-  return response
+    data = request.json
+    token = login(data['username'], data['password'])
+    if not token:
+        return jsonify(message='bad username or password given'), 401
+    return jsonify(access_token=token)
 
 @auth_views.route('/api/identify', methods=['GET'])
 @jwt_required()
@@ -48,6 +47,7 @@ def signup_api():
     if not username or not password:
         return jsonify({'error': {'code': 'validation_error', 'message': 'username and password required'}}), 422
 
+    
     try:
         if role == 'resident':
             area_id = data.get('area_id')

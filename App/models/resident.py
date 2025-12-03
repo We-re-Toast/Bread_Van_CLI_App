@@ -1,4 +1,5 @@
 from datetime import datetime
+from App.models.driver_stock import DriverStock
 from sqlalchemy.ext.mutable import MutableList
 from sqlalchemy import JSON
 
@@ -77,12 +78,20 @@ class Resident(User):
         driver = Driver.query.get(driverId)
         if not driver:
             return None
-        return driver.get_json() if hasattr(driver, 'get_json') else {
+
+        stocks = DriverStock.query.filter_by(driverId=driverId).all()
+        stock_json = [s.get_json() for s in stocks]
+
+        driver_info = driver.get_json() if hasattr(driver, 'get_json') else {
             "id": driver.id,
             "username": driver.username,
-            "areaId": driver.areaId if hasattr(driver, "areaId") else None,
-            "streetId": driver.streetId if hasattr(driver, "streetId") else None
+            "areaId": getattr(driver, "areaId", None),
+            "streetId": getattr(driver, "streetId", None)
         }
+
+        driver_info["stock"] = stock_json
+
+        return driver_info
 
     def update(self, message: str, driverID = None) -> None:
         self.receive_notif(message, driverID)
