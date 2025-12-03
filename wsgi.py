@@ -45,6 +45,18 @@ from App.models.item import Item
 app = create_app()
 migrate = get_migrate(app)
 
+from App.api.admin import bp as admin_bp
+from App.api.common import bp as common_bp
+from App.api.driver import bp as driver_bp
+from App.api.resident import bp as resident_bp
+from App.api.auth import bp as auth_bp
+
+app.register_blueprint(admin_bp)
+app.register_blueprint(common_bp)
+app.register_blueprint(driver_bp)
+app.register_blueprint(resident_bp)
+app.register_blueprint(auth_bp)
+
 with app.app_context():
     upgrade()
     existing = db.session.query(User).filter_by(username='admin').first()
