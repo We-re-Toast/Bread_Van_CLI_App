@@ -14,6 +14,7 @@ class Driver(User):
     status = db.Column(db.String(20), nullable=False)
     areaId = db.Column(db.Integer, db.ForeignKey('area.id'), nullable=False)
     streetId = db.Column(db.Integer, db.ForeignKey('street.id'))
+    _observers: List[Observer] = []
 
     area = db.relationship("Area", backref="drivers")
     street = db.relationship("Street", backref="drivers")
@@ -27,7 +28,8 @@ class Driver(User):
         self.status = status
         self.areaId = areaId
         self.streetId = streetId
-        self._observers: List[Observer] = []
+        self._observers = []
+
 
     def attach(self, observer: "Observer") -> None:
         if observer not in self._observers:
@@ -80,16 +82,6 @@ class Driver(User):
                           status="Upcoming")
         db.session.add(new_drive)
         db.session.commit()
-
-        street = Street.query.get(streetId)
-        self._observers = []
-        if street:
-            for resident in street.residents:
-                self.attach(resident)
-            self.notify(
-                f"NEW DRIVE: Drive {new_drive.id} on {date} at {time}"
-            )
-            db.session.commit()
         return (new_drive)
 
     def cancel_drive(self, driveId):
