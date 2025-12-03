@@ -1,6 +1,6 @@
 import os, tempfile, pytest, logging, unittest
 from werkzeug.security import check_password_hash, generate_password_hash
-from datetime import date, time
+from datetime import date, time, datetime, timedelta
 
 from App.main import create_app
 from App.database import db, create_db
@@ -9,6 +9,10 @@ from App.controllers import *
 
 
 LOGGER = logging.getLogger(__name__)
+
+
+def future(days=1): # helper function to get a date string days in the future
+    return (datetime.now() + timedelta(days=days)).strftime("%Y-%m-%d")
 
 '''
    Unit Tests
@@ -71,6 +75,45 @@ class ResidentUnitTests(unittest.TestCase):
         assert resident.inbox[1].endswith("msg2")
         assert resident.inbox[0].startswith("[")
         assert resident.inbox[1].startswith("[")
+
+    def test_subscribe(self):         # verify subscribe method adds driver id and prevents duplicates
+
+        resident = Resident("jane", "janepass", 1, 2, 10)
+
+        if resident.subscriptions is None:
+            resident.subscriptions = []
+
+        assert resident.subscriptions == []
+
+        # subscribe to driver id 42
+        resident.subscribe(42)
+        assert 42 in resident.subscriptions
+
+        # subscribing again should not create duplicates
+        resident.subscribe(42)
+        assert resident.subscriptions.count(42) == 1
+
+    def test_unsubscribe(self):
+        # verify unsubscribe removes a previously subscribed id
+        resident = Resident("jane", "janepass", 1, 2, 10)
+        if resident.subscriptions is None:
+            resident.subscriptions = []
+
+        resident.subscribe(77)
+        assert 77 in resident.subscriptions
+
+        resident.unsubscribe(77)
+        assert 77 not in resident.subscriptions
+        assert resident.subscriptions == []
+
+    def test_unsubscribe_nonexistent_is_noop(self):
+        # unsubscribing an id that isn't present should be a no-op
+        resident = Resident("mark", "markpass", 1, 2, 5)
+        if resident.subscriptions is None:
+            resident.subscriptions = []
+        # this should not raise and should leave subscriptions empty
+        resident.unsubscribe(9999)
+        assert resident.subscriptions == []
         
 class DriverUnitTests(unittest.TestCase):
 
@@ -241,7 +284,7 @@ class ResidentsIntegrationTests(unittest.TestCase):
         self.street = admin_add_street(self.area.id, "Warner Street")
         self.driver = admin_create_driver("driver1", "pass")
         self.resident = resident_create("john", "johnpass", self.area.id, self.street.id, 123)
-        self.drive = driver_schedule_drive(self.driver, self.area.id, self.street.id, "2025-11-10", "11:30")
+        self.drive = driver_schedule_drive(self.driver, self.area.id, self.street.id, future(1), "11:30")
         self.item = admin_add_item("Whole-Grain Bread", 19.50, "Healthy whole-grain loaf", ["whole-grain", "healthy"])
 
 
@@ -271,16 +314,16 @@ class DriversIntegrationTests(unittest.TestCase):
         self.street = admin_add_street(self.area.id, "Warner Street")
         self.driver = admin_create_driver("driver1", "pass")
         self.resident = resident_create("john", "johnpass", self.area.id, self.street.id, 123)
-        self.drive = driver_schedule_drive(self.driver, self.area.id, self.street.id, "2025-11-10", "11:30")
+        self.drive = driver_schedule_drive(self.driver, self.area.id, self.street.id, future(1), "11:30")
         self.stop = resident_request_stop(self.resident, self.drive.id)
         self.item = admin_add_item("Whole-Grain Bread", 19.50, "Healthy whole-grain loaf", ["whole-grain", "healthy"])
 
     def test_schedule_drive(self):
-        drive = driver_schedule_drive(self.driver, self.area.id, self.street.id, "2025-11-30", "09:00")
+        drive = driver_schedule_drive(self.driver, self.area.id, self.street.id, future(7), "09:00")
         self.assertIsNotNone(drive)
 
     def test_cancel_drive(self):
-        drive = driver_schedule_drive(self.driver, self.area.id, self.street.id, "2025-11-13", "08:15")
+        drive = driver_schedule_drive(self.driver, self.area.id, self.street.id, future(8), "08:15")
         driver_cancel_drive(self.driver, drive.id)
         assert drive.status == "Cancelled"
 
