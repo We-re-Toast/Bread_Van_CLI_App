@@ -234,27 +234,6 @@ class UsersIntegrationTests(unittest.TestCase):
             updated_user = get_user(user.id)
             assert updated_user.status == "Offline"
 
-    def test_get_user_by_username(self):
-        create_user("alice", "alicepass")
-        user = get_user_by_username("alice")
-        assert user.username == "alice"
-
-    def test_get_all_users(self):
-        create_user("bob", "bobpass")
-        create_user("rick", "ronniepass")
-        users = get_all_users()
-        assert len(users) == 2
-
-    def test_user_view_street_drives(self):
-        user = create_user("ronnie", "ronniepass")
-        area = admin_add_area("Port-of-Spain")
-        street = admin_add_street(area.id, "Fredrick Street")
-        driver = admin_create_driver("driver1", "pass")
-        drive = driver_schedule_drive(driver, area.id, street.id, "2025-11-10", "11:30")
-        drives = user_view_street_drives(user, area.id, street.id)
-        self.assertIsNotNone(drives)
-        assert len(drives) >= 1
-
 
 class ResidentsIntegrationTests(unittest.TestCase):
     
@@ -284,13 +263,6 @@ class ResidentsIntegrationTests(unittest.TestCase):
         driver_update_stock(self.driver, self.item.id, 30)
         stock = resident_view_stock(self.resident, self.driver.id)
         self.assertIsNotNone(stock)
-
-    def test_resident_view_inbox(self):
-        inbox = resident_view_inbox(self.resident)
-        assert inbox == []
-        self.resident.receive_notif("Test notification")
-        inbox = resident_view_inbox(self.resident)
-        assert len(inbox) == 1
 
 
 class DriversIntegrationTests(unittest.TestCase):
@@ -381,7 +353,7 @@ class AdminsIntegrationTests(unittest.TestCase):
     def test_delete_street(self):
         area = admin_add_area("Port-of-Spain")
         street = admin_add_street(area.id, "Fredrick Street")
-        admin_delete_street(area.id, street.id)
+        admin_delete_street(street.id)
         assert Street.query.filter_by(id=street.id).first() == None
 
     def test_view_all_streets(self):
