@@ -1,0 +1,396 @@
+{
+  "info": {
+    "_postman_id": "b8d2f1a9-0000-4f2b-aaaa-111111111111",
+    "name": "Bread Van App_API_Tests_v2",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Admin Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{admin_username}}\",\n  \"password\": \"{{admin_password}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{host}}/api/login", "host": ["{{host}}"], "path": ["api","login"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json && json.access_token) {",
+                  "  pm.environment.set('admin_token', json.access_token);",
+                  "  pm.test('admin token set', () => pm.expect(json.access_token).to.be.a('string'));",
+                  "} else {",
+                  "  pm.test('access_token present', () => pm.expect(pm.response.code).to.equal(200));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Driver Login",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{driver_username}}\",\n  \"password\": \"{{driver_password}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{host}}/api/login", "host": ["{{host}}"], "path": ["api","login"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "exec": [
+                "const json = pm.response.json();",
+                "if (json && json.access_token) {",
+                "  pm.environment.set('driver_token', json.access_token);",
+                "  pm.test('driver token set', () => pm.expect(json.access_token).to.be.a('string'));",
+                "}"
+              ], "type": "text/javascript" } }
+          ]
+        },
+        {
+          "name": "Resident Login",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"{{resident_username}}\",\n  \"password\": \"{{resident_password}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{host}}/api/login", "host": ["{{host}}"], "path": ["api","login"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [
+                "const json = pm.response.json();",
+                "if (json && json.access_token) {",
+                "  pm.environment.set('resident_token', json.access_token);",
+                "  pm.test('resident token set', () => pm.expect(json.access_token).to.be.a('string'));",
+                "}"
+              ], "type": "text/javascript" } } ]
+        },
+        {
+          "name": "Logout (clear tokens)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{host}}/api/logout", "host": ["{{host}}"], "path": ["api","logout"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.environment.unset('admin_token');",
+                  "pm.environment.unset('driver_token');",
+                  "pm.environment.unset('resident_token');",
+                  "pm.test('tokens cleared', () => pm.expect(true).to.eql(true));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Create Driver",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{admin_token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"test_driver_{{randomInt}}\",\n  \"password\": \"pass123\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{host}}/admin/drivers", "host": ["{{host}}"], "path": ["admin","drivers"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [
+                "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                "const json = pm.response.json();",
+                "if (json && json.id) { pm.environment.set('created_driver_id', json.id); pm.test('saved driver id', () => pm.expect(json.id).to.be.a('number')); }"
+              ], "type": "text/javascript" } } ]
+        },
+        {
+          "name": "Delete Driver (cleanup)",
+          "request": {
+            "method": "DELETE",
+            "header": [ { "key": "Authorization", "value": "Bearer {{admin_token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"driver_id\": {{created_driver_id}}\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{host}}/admin/drivers", "host": ["{{host}}"], "path": ["admin","drivers"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status 204 or 200', () => pm.expect([200,204]).to.include(pm.response.code));" ], "type": "text/javascript" } } ]
+        },
+        {
+          "name": "Create Area",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{admin_token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"test_area_{{randomInt}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{host}}/admin/areas", "host": ["{{host}}"], "path": ["admin","areas"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [
+                "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                "const json = pm.response.json();",
+                "if (json && json.id) { pm.environment.set('created_area_id', json.id); pm.test('saved area id', () => pm.expect(json.id).to.be.a('number')); }"
+              ], "type": "text/javascript" } } ]
+        },
+        {
+          "name": "Delete Area (cleanup)",
+          "request": {
+            "method": "DELETE",
+            "header": [ { "key": "Authorization", "value": "Bearer {{admin_token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"area_id\": {{created_area_id}}\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{host}}/admin/areas", "host": ["{{host}}"], "path": ["admin","areas"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status 204 or 200', () => pm.expect([200,204]).to.include(pm.response.code));" ], "type": "text/javascript" } } ]
+        },
+        {
+          "name": "Create Street",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{admin_token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"area_id\": {{created_area_id}},\n  \"name\": \"test_street_{{randomInt}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{host}}/admin/streets", "host": ["{{host}}"], "path": ["admin","streets"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [
+                "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                "const json = pm.response.json();",
+                "if (json && json.id) { pm.environment.set('created_street_id', json.id); pm.test('saved street id', () => pm.expect(json.id).to.be.a('number')); }"
+              ], "type": "text/javascript" } } ]
+        },
+        {
+          "name": "Delete Street (cleanup)",
+          "request": {
+            "method": "DELETE",
+            "header": [ { "key": "Authorization", "value": "Bearer {{admin_token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"area_id\": {{created_area_id}},\n  \"street_id\": {{created_street_id}}\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{host}}/admin/streets", "host": ["{{host}}"], "path": ["admin","streets"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status 204 or 200', () => pm.expect([200,204]).to.include(pm.response.code));" ], "type": "text/javascript" } } ]
+        }
+      ]
+    },
+    {
+      "name": "Driver",
+      "item": [
+        {
+          "name": "Create Drive",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{driver_token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"area_id\": {{created_area_id}},\n  \"street_id\": {{created_street_id}},\n  \"date\": \"2025-12-10\",\n  \"time\": \"09:00\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{host}}/driver/drives", "host": ["{{host}}"], "path": ["driver","drives"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [
+                "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                "const json = pm.response.json();",
+                "if (json && json.id) { pm.environment.set('created_drive_id', json.id); pm.test('saved drive id', () => pm.expect(json.id).to.be.a('number')); }"
+              ], "type": "text/javascript" } } ]
+        },
+        {
+          "name": "Start Drive",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{driver_token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"drive_id\": {{created_drive_id}}\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{host}}/driver/drives/start", "host": ["{{host}}"], "path": ["driver","drives","start"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status 200', () => pm.response.to.have.status(200));" ], "type": "text/javascript" } } ]
+        },
+        {
+          "name": "Requested Stops",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{driver_token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"drive_id\": {{created_drive_id}}\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{host}}/driver/drives/requested-stops", "host": ["{{host}}"], "path": ["driver","drives","requested-stops"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status 200', () => pm.response.to.have.status(200));" ], "type": "text/javascript" } } ]
+        },
+        {
+          "name": "End Drive",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{driver_token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{host}}/driver/drives/end", "host": ["{{host}}"], "path": ["driver","drives","end"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status 200 or 400 depending on state', () => pm.expect([200,400,404]).to.include(pm.response.code));" ], "type": "text/javascript" } } ]
+        },
+        {
+          "name": "Cancel Drive",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{driver_token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"drive_id\": {{created_drive_id}}\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{host}}/driver/drives/cancel", "host": ["{{host}}"], "path": ["driver","drives","cancel"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status 200', () => pm.response.to.have.status(200));" ], "type": "text/javascript" } } ]
+        },
+        {
+          "name": "Create/Update Stock",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{driver_token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"item_id\": 1,\n  \"quantity\": 10\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{host}}/driver/stock", "host": ["{{host}}"], "path": ["driver","stock"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [
+                "pm.test('Status 200 or 201', () => pm.expect([200,201]).to.include(pm.response.code));",
+                "const json = pm.response.json();",
+                "if (json && json.id) { pm.environment.set('created_stock_id', json.id); pm.test('saved stock id', () => pm.expect(json.id).to.be.a('number')); }"
+              ], "type": "text/javascript" } } ]
+        },
+        {
+          "name": "Patch Stock",
+          "request": {
+            "method": "PATCH",
+            "header": [ { "key": "Authorization", "value": "Bearer {{driver_token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"stock_id\": {{created_stock_id}},\n  \"quantity\": 5\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{host}}/driver/stock", "host": ["{{host}}"], "path": ["driver","stock"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status 200', () => pm.response.to.have.status(200));" ], "type": "text/javascript" } } ]
+        },
+        {
+          "name": "Delete Stock (cleanup)",
+          "request": {
+            "method": "DELETE",
+            "header": [ { "key": "Authorization", "value": "Bearer {{driver_token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"stock_id\": {{created_stock_id}}\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{host}}/driver/stock", "host": ["{{host}}"], "path": ["driver","stock"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status 204 or 200', () => pm.expect([200,204]).to.include(pm.response.code));" ], "type": "text/javascript" } } ]
+        },
+        {
+          "name": "Notify Residents",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{driver_token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"message\": \"Test notification from driver\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{host}}/driver/notify", "host": ["{{host}}"], "path": ["driver","notify"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status 200', () => pm.response.to.have.status(200));" ], "type": "text/javascript" } } ]
+        },
+        {
+          "name": "List Subscribers",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{driver_token}}" } ],
+            "url": { "raw": "{{host}}/driver/subscribers", "host": ["{{host}}"], "path": ["driver","subscribers"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status 200', () => pm.response.to.have.status(200));" ], "type": "text/javascript" } } ]
+        }
+      ]
+    },
+    {
+      "name": "Resident",
+      "item": [
+        {
+          "name": "Request Stop",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{resident_token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"drive_id\": {{created_drive_id}}\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{host}}/resident/stops", "host": ["{{host}}"], "path": ["resident","stops"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [
+                "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                "const json = pm.response.json();",
+                "if (json && json.id) { pm.environment.set('created_stop_id', json.id); pm.test('saved stop id', () => pm.expect(json.id).to.be.a('number')); }"
+              ], "type": "text/javascript" } } ]
+        },
+        {
+          "name": "Delete Stop (cleanup)",
+          "request": {
+            "method": "DELETE",
+            "header": [ { "key": "Authorization", "value": "Bearer {{resident_token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"drive_id\": {{created_drive_id}}\n}\n", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{host}}/resident/stops", "host": ["{{host}}"], "path": ["resident","stops"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status 204 or 200', () => pm.expect([200,204]).to.include(pm.response.code));" ], "type": "text/javascript" } } ]
+        },
+        {
+          "name": "Subscribe to Driver",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{resident_token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"driver_id\": {{created_driver_id}}\n}\n", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{host}}/resident/subscriptions", "host": ["{{host}}"], "path": ["resident","subscriptions"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status 201', () => pm.response.to.have.status(201));" ], "type": "text/javascript" } } ]
+        },
+        {
+          "name": "Unsubscribe from Driver (cleanup)",
+          "request": {
+            "method": "DELETE",
+            "header": [ { "key": "Authorization", "value": "Bearer {{resident_token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"driver_id\": {{created_driver_id}}\n}\n", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{host}}/resident/subscriptions", "host": ["{{host}}"], "path": ["resident","subscriptions"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status 204 or 200', () => pm.expect([200,204]).to.include(pm.response.code));" ], "type": "text/javascript" } } ]
+        },
+        {
+          "name": "View Inbox",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{resident_token}}" } ],
+            "url": { "raw": "{{host}}/resident/inbox", "host": ["{{host}}"], "path": ["resident","inbox"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status 200', () => pm.response.to.have.status(200));" ], "type": "text/javascript" } } ]
+        },
+        {
+          "name": "Driver Stats",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{resident_token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"driver_id\": {{created_driver_id}}\n}\n", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{host}}/resident/driver-stats", "host": ["{{host}}"], "path": ["resident","driver-stats"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status 200', () => pm.response.to.have.status(200));" ], "type": "text/javascript" } } ]
+        }
+      ]
+    },
+    {
+      "name": "Common",
+      "item": [
+        {
+          "name": "Street Drives",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{resident_token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"street_id\": {{created_street_id}},\n  \"date\": \"2025-12-10\"\n}\n", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{host}}/streets/drives", "host": ["{{host}}"], "path": ["streets","drives"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status 200', () => pm.response.to.have.status(200));" ], "type": "text/javascript" } } ]
+        },
+        {
+          "name": "Driver Stock (public)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{resident_token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"driver_id\": {{created_driver_id}}\n}\n", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{host}}/drivers/stock", "host": ["{{host}}"], "path": ["drivers","stock"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status 200', () => pm.response.to.have.status(200));" ], "type": "text/javascript" } } ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "host", "value": "http://localhost:5000" },
+    { "key": "admin_username", "value": "admin3" },
+    { "key": "admin_password", "value": "pass123" },
+    { "key": "driver_username", "value": "driver1" },
+    { "key": "driver_password", "value": "pass123" },
+    { "key": "resident_username", "value": "resident1" },
+    { "key": "resident_password", "value": "pass123" }
+  ]
+}
