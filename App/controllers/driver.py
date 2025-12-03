@@ -24,15 +24,19 @@ def driver_schedule_drive(driver, area_id, street_id, date_str, time_str):
         raise ValueError("Cannot schedule a drive more than 60 days in advance.")
     
     existing_drive = Drive.query.filter_by(areaId=area_id, streetId=street_id, date=date).first()
+    if existing_drive:
+        raise ValueError("A drive is already scheduled for this area and street on the selected date.")
     new_drive = driver.schedule_drive(area_id, street_id, date_str, time_str)
     
     residents = Resident.query.filter_by(areaId=area_id, streetId=street_id).all()
     menu_text = get_menu_text()
     eta = datetime.combine(date, time).strftime("%I:%M %p")
-    message = f"A route is scheduled for your neighborhood. \nETA: {eta}\n\n{menu_text}"
+    message = f"A route is scheduled for your neighborhood. DriveID = {new_drive.id} \nETA: {eta}\n\n{menu_text}"
 
     for resident in residents:
-        create_notification(resident_id=resident.id, message=message, driver_id=driver.id)
+        driver.attach(resident)
+    driver.notify(message)
+    db.session.commit()
     return new_drive
 
 def driver_cancel_drive(driver, drive_id):
@@ -80,6 +84,4 @@ def driver_view_stock(driver):
     return stocks
     
     
-def notify_residents(self, residents, message):
-    for resident in residents:
-        create_notification(user_id=resident.id, message=message, driver_id=self.id)
+

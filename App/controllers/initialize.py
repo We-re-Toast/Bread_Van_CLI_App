@@ -1,5 +1,6 @@
 from App.database import db
 from App.models import Admin, Driver, Resident, Area, Street, Item, Notification
+from App.controllers.driver import driver_schedule_drive
 
 
 def initialize():
@@ -83,7 +84,8 @@ def initialize():
     db.session.commit()
 
     #Creating Drives and Stops
-    driver2.schedule_drive(area1.id, street12.id, "2025-10-26", "10:00")
+    driver_schedule_drive(driver2, area1.id, street12.id, "2025-12-27", "11:00") 
+
     db.session.commit()
                      
     resident2.request_stop(0)
