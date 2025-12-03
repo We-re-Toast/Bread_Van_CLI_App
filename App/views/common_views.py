@@ -1,4 +1,7 @@
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required
+
+from App.api.security import role_required
 from App.controllers import area as area_controller
 from App.controllers import street as street_controller
 from App.controllers import drive as drive_controller
@@ -26,17 +29,29 @@ def get_streets():
     return jsonify({'items': items}), 200
 
 
-@common_views.route('/streets/<int:street_id>/drives', methods=['GET'])
-def street_drives(street_id):
-    date = request.args.get('date')
+@common_views.route('/streets/drives', methods=['POST'])
+@jwt_required()
+@role_required('Resident', 'Driver', 'Admin')
+def street_drives():
+    data = request.get_json() or {}
+    street_id = data.get('street_id')
+    date = data.get('date')
+    if street_id is None:
+        return jsonify({'error': {'code': 'validation_error', 'message': 'street_id required'}}), 422
     drives = []
     if hasattr(drive_controller, 'get_drives_for_street'):
         drives = drive_controller.get_drives_for_street(street_id, date)
     items = [d.get_json() if hasattr(d, 'get_json') else d for d in (drives or [])]
     return jsonify({'items': items}), 200
 
-@common_views.route('/drivers/<int:driver_id>/stock', methods=['GET'])
-def driver_stock(driver_id):
+@common_views.route('/drivers/stock', methods=['POST'])
+@jwt_required()
+@role_required('Resident', 'Driver', 'Admin')
+def driver_stock():
+    data = request.get_json() or {}
+    driver_id = data.get('driver_id')
+    if driver_id is None:
+        return jsonify({'error': {'code': 'validation_error', 'message': 'driver_id required'}}), 422
     stocks = DriverStock.query.filter_by(driverId=driver_id).all()
     items = [s.get_json() if hasattr(s, 'get_json') else s for s in (stocks or [])]
     return jsonify({'items': items}), 200
