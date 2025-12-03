@@ -58,21 +58,32 @@ class ResidentUnitTests(unittest.TestCase):
         resident_json = resident.get_json()
         self.assertDictEqual(resident_json, {"id":None, "username":"john", "areaId":1, "streetId":2, "houseNumber":123, "inbox":[]})
 
+    
     def test_receive_notif(self):
-        resident = Resident("john", "johnpass", 1, 2, 123)
-        resident.receive_notif("New msg")
-        assert resident.inbox[-1].endswith("New msg")
-        assert resident.inbox[-1].startswith("[")
+    
+        resident = Resident(username="john", password="johnpass", areaId=1, streetId=2, houseNumber=123)
+        db.session.add(resident)
+        db.session.commit()
+    
+        resident.receive_notif("New msg", driverId=42)
+
+    
+        notif = resident.inbox[0]
+        assert notif is not None
+        assert notif.message == "New msg"
+        assert notif.driver_id == 42
+
 
     def test_view_inbox(self):
         resident = Resident("john", "johnpass", 1, 2, 123)
+        db.session.add(resident)
+        db.session.commit()
         resident.receive_notif("msg1")
         resident.receive_notif("msg2")
         assert len(resident.inbox) == 2
-        assert resident.inbox[0].endswith("msg1")
-        assert resident.inbox[1].endswith("msg2")
-        assert resident.inbox[0].startswith("[")
-        assert resident.inbox[1].startswith("[")
+        assert resident.inbox[0].message == "msg1"
+        assert resident.inbox[1].message == "msg2"
+        
         
 class DriverUnitTests(unittest.TestCase):
 
@@ -185,7 +196,14 @@ class DriverStockUnitTests(unittest.TestCase):
     def test_driverStock_getJSON(self):
         driverStock = DriverStock(1, 2, 30)
         driverStock_json = driverStock.get_json()
-        self.assertDictEqual(driverStock_json, {"id":None, "driverId":1, "itemId":2, "quantity":30})
+        self.assertDictEqual(driverStock_json, {
+            "stockId": None,
+        "driverId": 1,
+        "itemId": 2,
+        "itemName": None,
+        "quantity": 30
+        })
+
         
 
 '''

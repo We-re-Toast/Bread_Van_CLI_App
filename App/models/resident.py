@@ -62,8 +62,10 @@ class Resident(User):
             db.session.commit()
         return
 
-    def receive_notif(self, message, driverId):
-        notif = Notification( resident_id=self.id, message=message, driver_id=driverId)
+    def receive_notif(self, message, driverId = None):
+        notif = Notification(self.id, message=message)
+        if driverId is not None:
+            notif.driver_id = driverId
         if len(self.inbox) >= MAX_INBOX_SIZE:
             oldest_notif = min(self.inbox, key=lambda n: n.date)
             db.session.delete(oldest_notif)
@@ -85,6 +87,7 @@ class Resident(User):
         driver_info = driver.get_json() if hasattr(driver, 'get_json') else {
             "id": driver.id,
             "username": driver.username,
+            "status": getattr(driver, "status", None),
             "areaId": getattr(driver, "areaId", None),
             "streetId": getattr(driver, "streetId", None)
         }

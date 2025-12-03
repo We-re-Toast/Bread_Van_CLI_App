@@ -28,10 +28,12 @@ def admin_add_item(name, price, description, tags):
 
 def admin_delete_item(item_id):
     item = Item.query.get(item_id)
+    name = item.name
     if not item:
         raise ValueError("Invalid item ID.")
     db.session.delete(item)
     db.session.commit()
+    return name
 
 def admin_view_all_areas():
     return Area.query.all()

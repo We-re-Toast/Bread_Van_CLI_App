@@ -243,7 +243,7 @@ def delete_item_command(item_id):
         return
     try:
         item = admin_delete_item(item_id)
-        print(f"Item {item.name} deleted.")
+        print(f"Item {item} deleted.")
     except ValueError as e:
         print(str(e))
         
@@ -391,12 +391,12 @@ def end_drive_command():
         print(str(e))
 
 @driver_cli.command("view_requested_stops", help="View requested stops for a drive")
-@click.argument("driveId")
-def view_requested_stops_command(driveId):
+@click.argument("drive_id", type=int)
+def view_requested_stops_command(drive_id):
     driver = require_driver()
     if not driver:
         return
-    stops = driver_view_requested_stops(driver, driveId)
+    stops = driver_view_requested_stops(driver, drive_id)
     if not stops:
         print("No requested stops for this drive.")
         return
@@ -518,15 +518,13 @@ def view_driver_stats_command(driver_id):
         return
     try:
         driver = resident_view_driver_stats(resident, driver_id)
-        if driver.status == "Offline":
-            print(f"Driver {driver.username} is currently offline.")
-        elif driver.status == "Available":
-            area = Area.query.get(driver.areaId)
-            print(f"Driver {driver.username} is currently available at {area.name}")
-        elif driver.status == "Busy":
-            area = Area.query.get(driver.areaId)
-            street = Street.query.get(driver.streetId)
-            print(f"Driver {driver.username} is currently on a drive at {street.name}, {area.name}")
+        if not driver:
+            print("Driver not found.")
+            return
+        print(f"\nDriver {driver['username']} (ID: {driver['id']}) Stats:")
+        print(f"Status: {driver.get('status', 'N/A')}")
+        print(f"Area ID: {driver.get('areaId', 'N/A')}")
+        print(f"Street ID: {driver.get('streetId', 'N/A')}")
     except ValueError as e:
         print(str(e))
 
@@ -586,7 +584,7 @@ test = AppGroup('test', help='Testing commands')
 @click.argument("type", default="all")
 def user_tests_command(type):
     if type == "unit":
-        sys.exit(pytest.main(["-k", "UserUnitTests"]))
+        sys.exit(pytest.main(["-k", "UnitTests"]))
     elif type == "int":
         sys.exit(pytest.main(["-k", "IntegrationTests"]))
     else:
