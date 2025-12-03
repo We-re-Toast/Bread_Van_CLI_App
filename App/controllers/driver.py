@@ -31,7 +31,7 @@ def driver_schedule_drive(driver, area_id, street_id, date_str, time_str):
     residents = Resident.query.filter_by(areaId=area_id, streetId=street_id).all()
     menu_text = get_menu_text()
     eta = datetime.combine(date, time).strftime("%I:%M %p")
-    message = f"A route is scheduled for your neighborhood. DriveID = {new_drive.id} \nETA: {eta}\n\n{menu_text}"
+    message = f"A route is scheduled for your neighborhood. \nETA: {eta}\n\n{menu_text}"
 
     for resident in residents:
         driver.attach(resident)
@@ -82,6 +82,3 @@ def driver_update_stock(driver, item_id, quantity):
 def driver_view_stock(driver):
     stocks = DriverStock.query.filter_by(driverId=driver.id).all() 
     return stocks
-    
-    
-
