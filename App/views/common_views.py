@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from App.controllers import area as area_controller
 from App.controllers import street as street_controller
 from App.controllers import drive as drive_controller
+from App.models import DriverStock
 
 common_views = Blueprint('common_views', __name__)
 
@@ -32,4 +33,10 @@ def street_drives(street_id):
     if hasattr(drive_controller, 'get_drives_for_street'):
         drives = drive_controller.get_drives_for_street(street_id, date)
     items = [d.get_json() if hasattr(d, 'get_json') else d for d in (drives or [])]
+    return jsonify({'items': items}), 200
+
+@common_views.route('/drivers/<int:driver_id>/stock', methods=['GET'])
+def driver_stock(driver_id):
+    stocks = DriverStock.query.filter_by(driverId=driver_id).all()
+    items = [s.get_json() if hasattr(s, 'get_json') else s for s in (stocks or [])]
     return jsonify({'items': items}), 200
