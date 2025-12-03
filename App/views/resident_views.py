@@ -52,12 +52,11 @@ def inbox():
     return jsonify({'items': items}), 200
 
 
-@resident_views.route('/resident/driver-stats', methods=['GET'])
+@resident_views.route('/resident/driver-stats/<int:driver_id>', methods=['GET'])
 @jwt_required()
 @role_required('Resident')
-def driver_stats():
-    params = request.args
-    driver_id = params.get('driver_id')
+def driver_stats(driver_id):
+
     if not driver_id:
         return jsonify({'error': {'code': 'validation_error', 'message': 'driver_id is required'}}), 422
     uid = current_user_id()

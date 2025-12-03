@@ -75,7 +75,14 @@ class Resident(User):
 
     def view_driver_stats(self, driverId):
         driver = Driver.query.get(driverId)
-        return driver
-    
+        if not driver:
+            return None
+        return driver.get_json() if hasattr(driver, 'get_json') else {
+            "id": driver.id,
+            "username": driver.username,
+            "areaId": driver.areaId if hasattr(driver, "areaId") else None,
+            "streetId": driver.streetId if hasattr(driver, "streetId") else None
+        }
+
     def update(self, message: str, driverID = None) -> None:
         self.receive_notif(message, driverID)

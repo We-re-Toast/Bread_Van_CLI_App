@@ -25,8 +25,15 @@ def resident_cancel_stop(resident, drive_id):
     resident.cancel_stop(stop.id)
     return stop
 
-def resident_view_inbox(resident):
-    return resident.view_inbox()
+def resident_view_inbox(user_or_resident):
+    if hasattr(user_or_resident, 'view_inbox'):
+        return user_or_resident.view_inbox()
+
+    resident = Resident.query.filter_by(user_id=user_or_resident.id).first()
+    if resident:
+        return resident.view_inbox()
+    
+    raise ValueError("Could not find resident profile")
 
 def resident_view_driver_stats(resident, driver_id):
     driver = resident.view_driver_stats(driver_id)
