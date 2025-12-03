@@ -14,9 +14,9 @@ LOGGER = logging.getLogger(__name__)
 def future(days=1): # helper function to get a date string days in the future
     return (datetime.now() + timedelta(days=days)).strftime("%Y-%m-%d")
 
-'''
-   Unit Tests
-'''
+#'''
+#   Unit Tests
+#'''
 class UserUnitTests(unittest.TestCase):
 
     def test_new_user(self):
@@ -424,5 +424,70 @@ class AdminsIntegrationTests(unittest.TestCase):
         assert items != None
         assert len(items) == 3
         
-    
 
+class ResidentInvalidTests(unittest.TestCase):
+    def setUp(self):
+        self.area = admin_add_area("TestArea")
+        self.street = admin_add_street(self.area.id, "TestStreet")
+        self.resident = Resident("testUser", "pass", self.area.id, self.street.id, 12)
+        db.session.add(self.resident)
+        db.session.commit()
+
+    # ========== SUBSCRIBE INVALID ==========
+    def test_subscribe_invalid_value(self):
+        self.resident.subscribe(None)
+        self.assertIn(None, self.resident.subscriptions)  # current behavior: it stores None
+
+    def test_subscribe_duplicate(self):
+        self.resident.subscribe(1)
+        self.resident.subscribe(1)  # duplicate subscribe should not add twice
+        self.assertEqual(self.resident.subscriptions.count(1), 1)
+
+    # ========== UNSUBSCRIBE INVALID ==========
+    def test_unsubscribe_not_subscribed(self):
+        # Should not break or crash
+        try:
+            self.resident.unsubscribe(99)  # id not in subscriptions
+            success = True
+        except:
+            success = False
+        self.assertTrue(success)
+
+    # ========== REQUEST STOP INVALID ==========
+    def test_request_stop_invalid_drive(self):
+        result = self.resident.request_stop(9999)  # drive doesn't exist
+        self.assertIsNone(result)
+
+    # ========== CANCEL INVALID STOP ==========
+    def test_cancel_nonexistent_stop(self):
+        try:
+            self.resident.cancel_stop(9999)  # no crash expected
+            success = True
+        except:
+            success = False
+        self.assertTrue(success)
+
+    # ========== VIEW DRIVER INVALID ==========
+    def test_view_driver_stats_invalid_driver(self):
+        result = self.resident.view_driver_stats(9999)
+        self.assertIsNone(result)
+
+    def test_inbox_max_size_limit(self):
+        for i in range(25):  # exceeds max size of 20
+            self.resident.receive_notif(f"msg{i}")
+
+        self.assertEqual(len(self.resident.inbox), 20)
+        self.assertTrue("msg5" in self.resident.inbox[0])  # first 5 dropped
+
+    def test_create_resident_invalid_area(self):
+        with self.assertRaises(Exception):
+            Resident("new", "pass", None, self.street.id, 15)
+
+    def test_create_resident_invalid_house_number(self):
+        with self.assertRaises(Exception):
+            Resident("new", "pass", self.area.id, self.street.id, "not-a-number")
+
+    def test_view_inbox_empty(self):
+        inbox = self.resident.view_inbox()
+        self.assertIsInstance(inbox, list)
+        self.assertEqual(len(inbox), 0)
