@@ -22,16 +22,11 @@ def me():
 @jwt_required()
 @role_required('Driver')
 def list_drives():
-    params = request.args
-    page = int(params.get('page', 1))
-    page_size = int(params.get('page_size', 20))
     uid = current_user_id()
     driver = user_controller.get_user(uid)
     drives = driver_controller.driver_view_drives(driver)
-    total = len(drives) if drives else 0
-    start = (page - 1) * page_size
-    items = [d.get_json() if hasattr(d, 'get_json') else d for d in (drives or [])[start:start+page_size]]
-    return jsonify({'items': items, 'page': page, 'total': total}), 200
+    items = [d.get_json() if hasattr(d, 'get_json') else d for d in (drives or [])]
+    return jsonify({'items': items}), 200
 
 
 @driver_views.route('/driver/schedule-drive', methods=['POST'])
@@ -43,7 +38,7 @@ def create_drive():
     street_id = data.get('street_id')
     date = data.get('date')
     time = data.get('time')
-    if not area_id or not street_id or not date or not time:
+    if not street_id or not date or not time:
         return jsonify({'error': {'code': 'validation_error', 'message': 'street_id, date and time required'}}), 422
     try:
         uid = current_user_id()
@@ -51,7 +46,7 @@ def create_drive():
         drive = driver_controller.driver_schedule_drive(driver, area_id, street_id, date, time)
         out = drive.get_json() if hasattr(drive, 'get_json') else drive
         return jsonify(out), 201
-    except Exception as e:
+    except ValueError as e:
         return jsonify({'error': str(e)}), 400
 
 @driver_views.route('/driver/drives/<int:drive_id>/start', methods=['POST'])
@@ -84,18 +79,30 @@ def end_drive(drive_id=None):
 @jwt_required()
 @role_required('Driver')
 def cancel_drive(drive_id):
-    uid = current_user_id()
-    driver = user_controller.get_user(uid)
-    driver_controller.driver_cancel_drive(driver, drive_id)
-    return jsonify({'id': drive_id, 'status': 'cancelled'}), 200
+    try:
+        uid = current_user_id()
+        driver = user_controller.get_user(uid)
+        driver_controller.driver_cancel_drive(driver, drive_id)
+        return jsonify({'id': drive_id, 'status': 'cancelled'}), 200
+    except ValueError as e:
+            return jsonify({'error': str(e)}), 400
 
 
-@driver_views.route('/driver/drives/<int:drive_id>/requested-stops', methods=['GET'])
+@driver_views.route('/driver/requested-stops', methods=['POST'])
 @jwt_required()
 @role_required('Driver')
-def requested_stops(drive_id):
-    uid = current_user_id()
-    driver = user_controller.get_user(uid)
-    stops = driver_controller.driver_view_requested_stops(driver, drive_id)
-    items = [s.get_json() if hasattr(s, 'get_json') else s for s in (stops or [])]
-    return jsonify({'items': items}), 200
+def requested_stops():
+    try:
+        data = request.get_json() or {}
+        drive_id = data.get('drive_id')
+        if not drive_id:
+            return jsonify({'error': {'code': 'validation_error', 'message': 'drive_id is required'}}), 422
+
+        uid = current_user_id()
+        driver = user_controller.get_user(uid)
+        stops = driver_controller.driver_view_requested_stops(driver, drive_id)
+        items = [s.get_json() if hasattr(s, 'get_json') else s for s in (stops or [])]
+
+        return jsonify({'items': items}), 200
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400

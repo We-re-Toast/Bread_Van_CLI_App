@@ -22,16 +22,21 @@ def driver_schedule_drive(driver, area_id, street_id, date_str, time_str):
 
     if scheduled_datetime > one_year_later:
         raise ValueError("Cannot schedule a drive more than 60 days in advance.")
-    
-    existing_drive = Drive.query.filter_by(areaId=area_id, streetId=street_id, date=date).first()
+        
+    scheduled_time = datetime.strptime(time_str, "%H:%M").time()
+
+    existing_drive = Drive.query.filter_by(areaId=area_id, streetId=street_id, date=date, time=scheduled_time).first()
+
     if existing_drive:
-        raise ValueError("A drive is already scheduled for this area and street on the selected date.")
+        raise ValueError("A drive is already scheduled for this area and street at the selected date and time.")
+
     new_drive = driver.schedule_drive(area_id, street_id, date_str, time_str)
+
     
     residents = Resident.query.filter_by(areaId=area_id, streetId=street_id).all()
     menu_text = get_menu_text()
     eta = datetime.combine(date, time).strftime("%I:%M %p")
-    message = f"A route is scheduled for your neighborhood. \nETA: {eta}\n\n{menu_text}"
+    message = f"A route is scheduled for your neighborhood. DriveID = {new_drive.id} \nETA: {eta}\n\n{menu_text}"
 
     for resident in residents:
         driver.attach(resident)

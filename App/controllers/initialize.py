@@ -1,6 +1,7 @@
 from App.database import db
 from App.models import Admin, Driver, Resident, Area, Street, Item, Notification
 from App.controllers.driver import driver_schedule_drive
+from App.models.driver_stock import DriverStock
 
 
 def initialize():
@@ -79,9 +80,17 @@ def initialize():
     item7 = Item(name = "Sourdough Bread", price = 15.00, description = "Tangy sourdough bread.", tags = ["bread"])
     item8 = Item(name = "Cinnamon Roll", price = 6.00, description = "Sweet cinnamon roll.", tags = ["sweet" , "pastry"])
     item9 = Item(name = "Cheese Danish", price = 5.00, description = "Cream cheese danish.", tags = ["pastry"])
-
     db.session.add_all([item1, item2, item3, item4, item5, item6, item7, item8, item9])
     db.session.commit()
+
+    # Add stock for drivers
+    stock1 = DriverStock(driverId=driver1.id, itemId=item1.id, quantity=20)
+    stock2 = DriverStock(driverId=driver1.id, itemId=item3.id, quantity=10)
+    stock3 = DriverStock(driverId=driver2.id, itemId=item2.id, quantity=15)
+    stock4 = DriverStock(driverId=driver2.id, itemId=item4.id, quantity=5)
+    db.session.add_all([stock1, stock2, stock3, stock4])
+    db.session.commit()
+    
 
     #Creating Drives and Stops
     driver_schedule_drive(driver2, area1.id, street12.id, "2025-12-27", "11:00") 
