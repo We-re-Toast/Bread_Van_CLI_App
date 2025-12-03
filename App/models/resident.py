@@ -7,6 +7,7 @@ from App.database import db
 from .user import User
 from .driver import Driver
 from .stop import Stop
+from .drive import Drive
   
 
 
@@ -71,11 +72,15 @@ class Resident(User):
         return user_json
 
     def request_stop(self, driveId):
+        # Validate that the drive exists before creating a stop.
         try:
+            drive = Drive.query.get(driveId)
+            if not drive:
+                return None
             new_stop = Stop(driveId=driveId, residentId=self.id)
             db.session.add(new_stop)
             db.session.commit()
-            return (new_stop)
+            return new_stop
         except Exception:
             db.session.rollback()
             return None

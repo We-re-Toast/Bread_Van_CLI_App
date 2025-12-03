@@ -5,10 +5,30 @@ from App.database import db
 # All resident-related business logic will be moved here as functions
 
 def resident_create(username, password, area_id, street_id, house_number):
-    resident = Resident(username=username, password=password, areaId=area_id, streetId=street_id, houseNumber=house_number)
-    db.session.add(resident)
-    db.session.commit()
-    return resident
+    # Validate inputs and existence of related records before creating
+    if area_id is None:
+        raise ValueError("Invalid area id")
+    if street_id is None:
+        raise ValueError("Invalid street id")
+    if not isinstance(house_number, int):
+        raise ValueError("Invalid house number")
+
+    area = Area.query.get(area_id)
+    if not area:
+        raise ValueError("Area not found")
+
+    street = Street.query.get(street_id)
+    if not street or street.areaId != area_id:
+        raise ValueError("Street not found in the specified area")
+
+    try:
+        resident = Resident(username, password, area_id, street_id, house_number)
+        db.session.add(resident)
+        db.session.commit()
+        return resident
+    except Exception:
+        db.session.rollback()
+        raise
 
 def resident_request_stop(resident, drive_id):
     drives = Drive.query.filter_by(areaId=resident.areaId, streetId=resident.streetId, status="Upcoming").all()

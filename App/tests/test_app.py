@@ -458,9 +458,8 @@ class ResidentInvalidTests(unittest.TestCase):
     def setUp(self):
         self.area = admin_add_area("TestArea")
         self.street = admin_add_street(self.area.id, "TestStreet")
-        self.resident = Resident("testUser", "pass", self.area.id, self.street.id, 12)
-        db.session.add(self.resident)
-        db.session.commit()
+        # Create resident via controller to ensure validation and DB persistence
+        self.resident = resident_create("testUser", "pass", self.area.id, self.street.id, 12)
 
     # ========== SUBSCRIBE INVALID ==========
     def test_subscribe_invalid_value(self):
@@ -510,11 +509,11 @@ class ResidentInvalidTests(unittest.TestCase):
 
     def test_create_resident_invalid_area(self):
         with self.assertRaises(Exception):
-            Resident("new", "pass", None, self.street.id, 15)
+            resident_create("new", "pass", None, self.street.id, 15)
 
     def test_create_resident_invalid_house_number(self):
         with self.assertRaises(Exception):
-            Resident("new", "pass", self.area.id, self.street.id, "not-a-number")
+            resident_create("new", "pass", self.area.id, self.street.id, "not-a-number")
 
     def test_view_inbox_empty(self):
         inbox = self.resident.view_inbox()

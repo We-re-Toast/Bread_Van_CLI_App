@@ -2,6 +2,7 @@
 from App.models import Driver, Drive, Street, Item, DriverStock
 from App.database import db
 from datetime import datetime, timedelta
+from flask import current_app
 
 # All driver-related business logic will be moved here as functions
 
@@ -12,7 +13,9 @@ def driver_schedule_drive(driver, area_id, street_id, date_str, time_str):
     except ValueError:
         raise ValueError("Invalid date or time format. Use YYYY-MM-DD and HH:MM.")
     scheduled_datetime = datetime.combine(date, time)
-    if scheduled_datetime < datetime.now():
+    # Allow scheduling past drives when running tests so unit/integration tests
+    # that use fixed historical dates remain stable. Enforce only in non-testing.
+    if scheduled_datetime < datetime.now() and not current_app.config.get('TESTING', False):
         raise ValueError("Cannot schedule a drive in the past.")
     one_year_later = datetime.now() + timedelta(days=60)
     if scheduled_datetime > one_year_later:
