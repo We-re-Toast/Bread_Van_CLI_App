@@ -1,3 +1,4 @@
+from App.controllers.user import user_view_street_drives
 import os, tempfile, pytest, logging, unittest
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import date, time
