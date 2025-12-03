@@ -161,6 +161,25 @@ flask resident view_inbox
 flask resident view_driver_stats <driver_id>
 ```
 
+### View All Drivers Status
+```bash
+flask resident list_drivers
+```
+
+### Subcribe to A Driver
+```bash
+flask resident subscribe <driver_id>
+```
+
+### Unsubcribe to A Driver
+```bash
+flask resident unsubscribe <driver_id>
+```
+
+### View Subcription list
+```bash
+flask resident my_subscriptions
+```
 
 ## 🔑 Role Requirements
 * flask admin ... → must be logged in as Admin
@@ -170,12 +189,5 @@ flask resident view_driver_stats <driver_id>
 
 General user commands (login/logout/view_street_drives) are available to all.
 
-
-
 New commands
-flask resident list_drivers
-flask resident subscribe 2
-flask resident unsubscribe 2
-flask resident my_subscriptions
-below now wholes history
-flask resident view_inbox
+
