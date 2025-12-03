@@ -12,44 +12,6 @@ from App.controllers import resident as resident_controller
 
 auth_views = Blueprint('auth_views', __name__, template_folder='../templates')
 
-
-
-
-'''
-Page/Action Routes
-'''    
-
-@auth_views.route('/identify', methods=['GET'])
-@jwt_required()
-def identify_page():
-    return render_template('message.html', title="Identify", message=f"You are logged in as {current_user.id} - {current_user.username}")
-    
-
-@auth_views.route('/login', methods=['POST'])
-def login_action():
-    data = request.form
-    token = login(data['username'], data['password'])
-
-    if not token:
-        flash('Bad username or password given')
-        return jsonify({'error': 'Invalid credentials'}), 401
-
-    flash('Login Successful')
-    response = jsonify({'message': 'Login successful'})
-    set_access_cookies(response, token)
-    return response
-
-@auth_views.route('/logout', methods=['GET'])
-def logout_action():
-    response = jsonify({'message': 'Logged out'})
-    flash("Logged Out!")
-    unset_jwt_cookies(response)
-    return response
-
-'''
-API Routes
-'''
-
 @auth_views.route('/api/login', methods=['POST'])
 def user_login_api():
   data = request.json
@@ -86,7 +48,6 @@ def signup_api():
     if not username or not password:
         return jsonify({'error': {'code': 'validation_error', 'message': 'username and password required'}}), 422
 
-    
     try:
         if role == 'resident':
             area_id = data.get('area_id')
