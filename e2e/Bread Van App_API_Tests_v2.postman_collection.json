@@ -62,8 +62,21 @@
               ], "type": "text/javascript" } }
           ]
         },
-        {
-          "name": "Resident Login",
+            {
+              "name": "Get Driver Me",
+              "request": {
+                "method": "GET",
+                "header": [ { "key": "Authorization", "value": "Bearer {{driver_token}}" } ],
+                "url": { "raw": "{{host}}/driver/me", "host": ["{{host}}"], "path": ["driver","me"] }
+              },
+              "event": [ { "listen": "test", "script": { "exec": [
+                    "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                    "const json = pm.response.json();",
+                    "if (json && json.id) { pm.environment.set('created_driver_id', json.id); pm.test('saved driver id', () => pm.expect(json.id).to.be.a('number')); }"
+                  ], "type": "text/javascript" } } ]
+            },
+            {
+              "name": "Resident Login",
           "request": {
             "method": "POST",
             "header": [ { "key": "Content-Type", "value": "application/json" } ],
@@ -76,6 +89,19 @@
                 "  pm.environment.set('resident_token', json.access_token);",
                 "  pm.test('resident token set', () => pm.expect(json.access_token).to.be.a('string'));",
                 "}"
+              ], "type": "text/javascript" } } ]
+        },
+        {
+          "name": "Get Resident Me",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{resident_token}}" } ],
+            "url": { "raw": "{{host}}/resident/me", "host": ["{{host}}"], "path": ["resident","me"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [
+                "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                "const json = pm.response.json();",
+                "if (json && json.id) { pm.environment.set('created_resident_id', json.id); pm.test('saved resident id', () => pm.expect(json.id).to.be.a('number')); }"
               ], "type": "text/javascript" } } ]
         },
         {
@@ -301,11 +327,48 @@
             "body": { "mode": "raw", "raw": "{\n  \"drive_id\": {{created_drive_id}}\n}", "options": { "raw": { "language": "json" } } },
             "url": { "raw": "{{host}}/resident/stops", "host": ["{{host}}"], "path": ["resident","stops"] }
           },
-          "event": [ { "listen": "test", "script": { "exec": [
-                "pm.test('Status 201', () => pm.response.to.have.status(201));",
-                "const json = pm.response.json();",
-                "if (json && json.id) { pm.environment.set('created_stop_id', json.id); pm.test('saved stop id', () => pm.expect(json.id).to.be.a('number')); }"
-              ], "type": "text/javascript" } } ]
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "(function() {",
+                  "  const id = pm.environment.get('created_drive_id') || pm.environment.get('DRIVE_ID');",
+                  "  if (!id) {",
+                  "    // Send an empty JSON body to avoid invalid JSON when the variable is unset",
+                  "    pm.request.body.raw = JSON.stringify({});",
+                  "    console.warn('created_drive_id not set; sending empty body');",
+                  "  } else {",
+                  "    pm.request.body.raw = JSON.stringify({ drive_id: Number(id) });",
+                  "  }",
+                  "})();"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  try {",
+                  "    const json = pm.response.json();",
+                  "    if (json && json.id) {",
+                  "      pm.environment.set('created_stop_id', json.id);",
+                  "      pm.test('saved stop id', () => pm.expect(json.id).to.be.a('number'));",
+                  "    } else {",
+                  "      pm.test('body contains id', () => pm.expect(json && json.id).to.be.ok);",
+                  "    }",
+                  "  } catch (e) {",
+                  "    pm.test('response JSON parse', () => pm.expect.fail('Response not valid JSON: ' + e));",
+                  "  }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
         },
         {
           "name": "Delete Stop (cleanup)",
@@ -336,6 +399,62 @@
             "url": { "raw": "{{host}}/resident/subscriptions", "host": ["{{host}}"], "path": ["resident","subscriptions"] }
           },
           "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status 204 or 200', () => pm.expect([200,204]).to.include(pm.response.code));" ], "type": "text/javascript" } } ]
+        },
+        {
+          "name": "Verify Notification Flow",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{host}}/resident/inbox?verify=1", "host": ["{{host}}"], "path": ["resident","inbox"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Verify notifications via /driver/notify', function (done) {",
+                  "  const residentToken = pm.environment.get('resident_token');",
+                  "  const driverToken = pm.environment.get('driver_token');",
+                  "  const driverId = pm.environment.get('created_driver_id');",
+                  "  if (!residentToken || !driverToken || !driverId) { pm.test('missing tokens or driver id', function(){pm.expect.fail('Set resident_token, driver_token, created_driver_id');}); done(); return; }",
+                  "  // Subscribe as resident",
+                  "  pm.sendRequest({",
+                  "    url: pm.environment.get('host') + '/resident/subscriptions',",
+                  "    method: 'POST',",
+                  "    header: { 'Authorization': 'Bearer ' + residentToken, 'Content-Type': 'application/json' },",
+                  "    body: { mode: 'raw', raw: JSON.stringify({ driver_id: Number(driverId) }) }",
+                  "  }, function (err, res) {",
+                  "    pm.test('subscribe status 201 or 200', function(){ pm.expect(res).to.have.property('code'); pm.expect([200,201]).to.include(res.code); });",
+                  "    // Trigger notify as the driver using existing driver with seeded scheduled drive",
+                  "    pm.sendRequest({",
+                  "      url: pm.environment.get('host') + '/driver/notify',",
+                  "      method: 'POST',",
+                  "      header: { 'Authorization': 'Bearer ' + driverToken, 'Content-Type': 'application/json' },",
+                  "      body: { mode: 'raw', raw: JSON.stringify({ message: 'Postman notify test' }) }",
+                  "    }, function (err2, res2) {",
+                  "      pm.test('notify status 200', function(){ pm.expect(res2).to.have.property('code'); pm.expect(res2.code).to.equal(200); });",
+                  "      // Now get resident inbox",
+                  "      pm.sendRequest({",
+                  "        url: pm.environment.get('host') + '/resident/inbox',",
+                  "        method: 'GET',",
+                  "        header: { 'Authorization': 'Bearer ' + residentToken }",
+                  "      }, function (err3, res3) {",
+                  "        pm.test('inbox contains notification', function(){",
+                  "          pm.expect(res3).to.have.property('code'); pm.expect(res3.code).to.equal(200);",
+                  "          const json = res3.json();",
+                  "          pm.expect(json).to.have.property('items');",
+                  "          pm.expect(json.items.length).to.be.above(0);",
+                  "        });",
+                  "        done();",
+                  "      });",
+                  "    });",
+                  "  });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
         },
         {
           "name": "View Inbox",
