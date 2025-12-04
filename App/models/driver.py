@@ -10,7 +10,7 @@ class Driver(User):
     status = db.Column(db.String(20), nullable=False)
 
     """Relationships"""
-    drives = db.relationship("Drive", backref="driver", lazy=True)
+    drives = db.relationship("Drive", backref="driver", lazy=True, cascade="all, delete-orphan")
 
     area = db.relationship("Area", backref="drivers", lazy=True)
     street = db.relationship("Street", backref="drivers", lazy=True)

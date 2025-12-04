@@ -15,7 +15,7 @@ class Drive(db.Model):
 
     """Relationships"""
     stop_requests = db.relationship("StopRequest", backref="drive", lazy=True)
-    items = db.relationship("DriveItem", backref="drive", lazy=True)
+    items = db.relationship("DriveItem", backref="drive", lazy=True, cascade="all, delete-orphan")
     area = db.relationship("Area", backref="drives")
     street = db.relationship("Street", backref="drives")
 

@@ -14,6 +14,9 @@ class StopRequest(db.Model):
         self.resident_id = resident_id
         self.message = message
 
+    def __repr__(self):
+        return f"ID: {self.id}, Drive ID: {self.drive_id}, Resident ID: {self.resident_id}, Message: {self.message}"
+
     def get_json(self):
         return {
             "id": self.id,

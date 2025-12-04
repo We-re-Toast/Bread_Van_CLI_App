@@ -15,13 +15,13 @@ class Notification(db.Model):
         self.timestamp = timestamp
 
     def __repr__(self):
-        return f"Notification ID: {self.id} | Resident ID: {self.resident_id} | Message: {self.message} | Timestamp: {self.timestamp} | Read: {self.is_read}"
+        return f"Notification ID: {self.id} | Resident ID: {self.resident_id} \nMessage: {self.message} \nTimestamp: {self.timestamp} | Read: {self.is_read}"
 
     def get_json(self):
         return {
             "id": self.id,
             "resident_id": self.resident_id,
             "message": self.message,
-            "timestamp": self.timestamp.isoformat(),
+            "timestamp": self.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
             "is_read": self.is_read,
         }

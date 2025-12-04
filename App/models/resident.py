@@ -13,8 +13,8 @@ class Resident(User):
 
     """Relationships"""
     stop_requests = db.relationship("StopRequest", backref="resident", lazy=True)
-    subscriptions = db.relationship("Subscription", backref="resident", lazy=True)
-    inbox = db.relationship("Notification", backref="resident", lazy=True)
+    subscriptions = db.relationship("Subscription", backref="resident", lazy=True, cascade="all, delete-orphan")
+    inbox = db.relationship("Notification", backref="resident", lazy=True, cascade="all, delete-orphan")
 
     __mapper_args__ = {
         "polymorphic_identity": "resident",
