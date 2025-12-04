@@ -37,4 +37,7 @@ def cancel_stop(stop_request_id, resident_id):
 
 
 def get_requested_stops(resident_id):
-    return StopRequest.query.filter_by(resident_id=resident_id).all()
+    stops = StopRequest.query.filter_by(resident_id=resident_id).all()
+    if not stops:
+        raise ResourceNotFound("No stop requests found")
+    return stops

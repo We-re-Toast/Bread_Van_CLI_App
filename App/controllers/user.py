@@ -19,7 +19,7 @@ def get_user(id):
 
 
 def get_all_users():
-    return db.session.scalars(db.select(User)).all()
+    return User.query.all()
 
 
 def get_all_users_json():

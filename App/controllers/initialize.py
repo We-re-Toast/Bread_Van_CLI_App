@@ -4,7 +4,7 @@ from App.controllers.resident import create_resident
 from App.controllers.driver import create_driver
 from App.controllers.area import create_area
 from App.controllers.street import create_street
-from App.controllers.drive import create_drive, add_drive_item, schedule_drive
+from App.controllers.drive import add_drive_item, schedule_drive
 from App.controllers.subscription import subscribe_to_street
 from App.controllers.item import create_item
 
@@ -42,6 +42,13 @@ def initialize():
         name="Croissant", price=1.50, description="Buttery Croissant", tags=[]
     )
     bagel = create_item(name="Bagel", price=2.00, description="Fresh Bagel", tags=[])
+    naan = create_item(name="Naan", price=1.00, description="Soft Naan", tags=[])
+    pita_bread = create_item(
+        name="Pita Bread", price=1.20, description="Whole Wheat Pita", tags=[]
+    )
+    cornbread = create_item(
+        name="Cornbread", price=1.80, description="Sweet Cornbread", tags=[]
+    )
 
     # Subscribe Resident to Main St
     subscribe_to_street(resident.id, main_st.id)
